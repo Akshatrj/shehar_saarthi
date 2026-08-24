@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AuthenticatedShell } from "@/components/layout/AuthenticatedShell";
+import { AdminShell } from "@/components/admin/AdminShell";
 import { requireSuperAdmin } from "@/lib/auth/require";
 
 export const metadata: Metadata = {
@@ -21,7 +22,7 @@ export default async function AdminLayout({
         role: user.role,
       }}
     >
-      {children}
+      <AdminShell>{children}</AdminShell>
     </AuthenticatedShell>
   );
 }

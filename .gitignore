@@ -36,3 +36,4 @@ next-env.d.ts
 
 # local evidence uploads (not for Vercel)
 /storage
+.env*

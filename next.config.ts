@@ -3,10 +3,19 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   compress: true,
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "*.public.blob.vercel-storage.com",
+      },
+    ],
+  },
   experimental: {
     serverActions: {
       bodySizeLimit: "8mb",
     },
+    middlewareClientMaxBodySize: "8mb",
     optimizePackageImports: ["leaflet", "leaflet.markercluster", "lucide-react"],
   },
   async headers() {
@@ -24,7 +33,7 @@ const nextConfig: NextConfig = {
           {
             key: "Content-Security-Policy",
             value:
-              "base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org",
+              "base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.public.blob.vercel-storage.com",
           },
           { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
           {

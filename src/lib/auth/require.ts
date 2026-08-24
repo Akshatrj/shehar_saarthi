@@ -137,6 +137,25 @@ export async function requireStaffApi(): Promise<
   return gate;
 }
 
+export async function requireCitizenPortalApi(): Promise<
+  { user: AuthUser } | { response: Response }
+> {
+  const gate = await requireAuthApi();
+  if ("response" in gate) {
+    return gate;
+  }
+  if (!canAccessCitizenPortal(gate.user.role)) {
+    return {
+      response: jsonError(
+        API_ERROR_CODES.FORBIDDEN,
+        "Citizen access is required.",
+        403,
+      ),
+    };
+  }
+  return gate;
+}
+
 export async function requireSuperAdminApi(): Promise<
   { user: AuthUser } | { response: Response }
 > {

@@ -71,20 +71,22 @@ model Department {
 }
 
 model Complaint {
-  id               String            @id @default(uuid()) @db.Uuid
-  publicRef        String            @unique @db.VarChar(32)
-  citizenId        String            @db.Uuid
-  departmentId     String?           @db.Uuid
-  assignedWorkerId String?           @db.Uuid
-  category         ComplaintCategory
+  id               String             @id @default(uuid()) @db.Uuid
+  publicRef        String             @unique @db.VarChar(32)
+  citizenId        String             @db.Uuid
+  departmentId     String?            @db.Uuid
+  assignedWorkerId String?            @db.Uuid
+  category         ComplaintCategory?
+  aiCategory       ComplaintCategory?
+  aiDescription    String?
   description      String
-  locationLabel    String?           @db.VarChar(500)
-  latitude         Decimal?          @db.Decimal(9, 6)
-  longitude        Decimal?          @db.Decimal(9, 6)
-  imageStorageKey  String?
-  status           ComplaintStatus   @default(SUBMITTED)
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  locationLabel    String?            @db.VarChar(500)
+  latitude         Decimal            @db.Decimal(9, 6)
+  longitude        Decimal            @db.Decimal(9, 6)
+  imageUrl         String
+  status           ComplaintStatus    @default(SUBMITTED)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
 
   citizen        User               @relation("CitizenComplaints", fields: [citizenId], references: [id], onDelete: Restrict)
   department     Department?        @relation(fields: [departmentId], references: [id], onDelete: SetNull)
@@ -102,6 +104,7 @@ model ComplaintHistory {
   id          String           @id @default(uuid()) @db.Uuid
   complaintId String           @db.Uuid
   actorId     String?          @db.Uuid
+  action      String           @db.VarChar(32)
   fromStatus  ComplaintStatus?
   toStatus    ComplaintStatus
   note        String?

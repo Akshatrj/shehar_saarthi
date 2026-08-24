@@ -110,22 +110,12 @@ export async function loadUserById(id: string): Promise<SyncedUser | null> {
     return null;
   }
 
-  const email = row.email.toLowerCase();
-  const role = isSuperAdminEmail(email) ? "SUPER_ADMIN" : asUserRole(row.role);
-
-  if (role === "SUPER_ADMIN" && row.role !== "SUPER_ADMIN") {
-    await prisma.user.update({
-      where: { id: row.id },
-      data: { role: "SUPER_ADMIN" },
-    });
-  }
-
   return {
     id: row.id,
     email: row.email,
     name: row.name,
     image: row.image,
-    role,
+    role: asUserRole(row.role),
     departmentId: row.departmentId,
     isActive: row.isActive,
   };

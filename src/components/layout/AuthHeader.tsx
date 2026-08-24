@@ -23,7 +23,8 @@ type AuthHeaderProps = {
 function portalLinksForRole(role: UserRole) {
   const links: { href: string; label: string }[] = [];
   if (canAccessCitizenPortal(role)) {
-    links.push({ href: "/citizen", label: "Citizen" });
+    links.push({ href: "/citizen", label: "My complaints" });
+    links.push({ href: "/citizen/report", label: "Report issue" });
   }
   if (canAccessStaffPortal(role)) {
     links.push({ href: "/staff", label: "Staff" });

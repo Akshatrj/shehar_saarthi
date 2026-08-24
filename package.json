@@ -9,15 +9,25 @@
     "lint": "eslint .",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
+    "db:validate": "prisma validate",
     "db:migrate": "tsx scripts/with-direct-db.ts prisma migrate deploy",
     "db:seed": "tsx scripts/with-direct-db.ts prisma db seed",
     "db:studio": "tsx scripts/with-direct-db.ts prisma studio",
-    "verify:secrets": "node scripts/verify-no-secrets.mjs"
+    "verify:secrets": "node scripts/verify-no-secrets.mjs",
+    "test:phase3": "tsx scripts/test-phase3-complaints.ts",
+    "test:phase4": "tsx scripts/test-phase4-classify.ts",
+    "test:phase5": "tsx scripts/test-phase5-category.ts",
+    "test:phase6": "tsx scripts/test-phase6-staff.ts",
+    "test:phase7": "tsx scripts/test-phase7-citizen.ts",
+    "test:phase8": "tsx scripts/test-phase8-admin.ts",
+    "test:phase9": "tsx scripts/test-phase9-transitions.ts",
+    "test:all": "npm run test:phase3 && npm run test:phase4 && npm run test:phase5 && npm run test:phase6 && npm run test:phase7 && npm run test:phase8 && npm run test:phase9"
   },
   "dependencies": {
     "@prisma/client": "^6.13.0",
     "@vercel/blob": "^2.8.0",
     "clsx": "^2.1.1",
+    "dotenv": "^17.4.2",
     "leaflet": "^1.9.4",
     "leaflet.markercluster": "^1.5.3",
     "lucide-react": "^1.31.0",
@@ -42,8 +52,5 @@
     "tailwindcss": "^4.1.12",
     "tsx": "^4.20.3",
     "typescript": "^5.9.2"
-  },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
   }
 }
