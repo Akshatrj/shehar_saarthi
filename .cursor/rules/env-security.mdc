@@ -1,0 +1,12 @@
+---
+description: Protect local secrets and environment files in SheharSaarthi
+alwaysApply: true
+---
+
+# Environment file security
+
+- **Never commit** `.env.local`, `.env`, or any `*.local` env file. Only `.env.example` (placeholders) may be committed.
+- **Never paste or echo** real values from `.env.local` in chat, commits, PRs, or logs (passwords, `AUTH_SECRET`, `DATABASE_URL`, tokens, API keys).
+- Before any `git add` or commit, run `npm run verify:secrets` if a git repo exists.
+- If the user asks to commit, **refuse to stage** `.env.local` or files matching `.env*.local`.
+- Vercel/Neon secrets belong in Vercel environment variables or local `.env.local` only.

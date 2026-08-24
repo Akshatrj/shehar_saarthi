@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Shehar Saarthi">
+  <defs>
+    <linearGradient id="ring" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4fc3f7"/>
+      <stop offset="100%" stop-color="#1565c0"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="8" fill="#0a192f"/>
+  <circle cx="16" cy="15" r="10.5" fill="none" stroke="url(#ring)" stroke-width="2"/>
+  <path d="M16 6 L21 21 L16 18 L11 21 Z" fill="#ff8f00"/>
+  <path d="M16 6 L19 18 L16 16 Z" fill="#4caf50"/>
+  <circle cx="16" cy="15" r="1.6" fill="#fff"/>
+  <circle cx="16" cy="15" r="0.7" fill="#4caf50"/>
+</svg>
