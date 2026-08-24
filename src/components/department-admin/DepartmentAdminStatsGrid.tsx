@@ -10,6 +10,7 @@ const statItems: Array<{
   { key: "assigned", label: "Assigned" },
   { key: "inProgress", label: "In progress" },
   { key: "completed", label: "Completed" },
+  { key: "closed", label: "Closed" },
 ];
 
 export function DepartmentAdminStatsGrid({
@@ -18,7 +19,7 @@ export function DepartmentAdminStatsGrid({
   stats: DepartmentAdminComplaintStats;
 }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
       {statItems.map((item) => (
         <Card key={item.key} className="p-4">
           <p className="text-small text-muted">{item.label}</p>

@@ -9,6 +9,7 @@ import {
 } from "@/lib/rbac";
 import type { UserRole } from "@/domains/auth/types";
 
+// Edge-safe: must not import @/lib/auth (Prisma-backed jwt callbacks break on middleware).
 const { auth } = NextAuth(authConfig);
 
 export default auth((request) => {

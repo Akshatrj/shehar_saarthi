@@ -1,8 +1,43 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { AdminDashboardInsights } from "@/components/admin/AdminDashboardInsights";
+import { DashboardInsightsFallback } from "@/components/dashboard/DashboardInsightsFallback";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
-import { requireSuperAdmin } from "@/lib/auth/require";
 import { getAdminDashboardStats } from "@/domains/admin/users";
+import { requireSuperAdmin } from "@/lib/auth/require";
+
+function StatCard({
+  label,
+  value,
+  href,
+}: {
+  label: string;
+  value: number;
+  href?: string;
+}) {
+  const content = (
+    <>
+      <p className="text-small text-muted">{label}</p>
+      <p className="mt-1 text-h2 text-navy">{value}</p>
+    </>
+  );
+
+  if (!href) {
+    return <Card className="p-4">{content}</Card>;
+  }
+
+  return (
+    <Link href={href} className="group block">
+      <Card className="p-4 transition-colors group-hover:border-brand group-hover:bg-brand-50/40">
+        {content}
+        <p className="mt-2 text-xs font-medium text-brand opacity-0 transition-opacity group-hover:opacity-100">
+          Open {label.toLowerCase()}
+        </p>
+      </Card>
+    </Link>
+  );
+}
 
 export default async function AdminHomePage() {
   const user = await requireSuperAdmin();
@@ -13,8 +48,9 @@ export default async function AdminHomePage() {
       <PageHeader
         eyebrow="Super Admin"
         title="Municipal control"
-        description="Manage users, departments, and complaints across the platform."
+        description="Platform overview, complaint geography, and workload analysis."
       />
+
       <Card className="p-5">
         <CardTitle>{user.name ?? user.email}</CardTitle>
         <CardDescription className="mt-2">
@@ -23,75 +59,27 @@ export default async function AdminHomePage() {
       </Card>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Card className="p-4">
-          <p className="text-small text-muted">Users</p>
-          <p className="mt-1 text-h2 text-navy">{stats.totalUsers}</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-small text-muted">Citizens</p>
-          <p className="mt-1 text-h2 text-navy">{stats.citizens}</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-small text-muted">Workers</p>
-          <p className="mt-1 text-h2 text-navy">{stats.workers}</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-small text-muted">Dept admins</p>
-          <p className="mt-1 text-h2 text-navy">{stats.departmentAdmins}</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-small text-muted">Departments</p>
-          <p className="mt-1 text-h2 text-navy">{stats.departments}</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-small text-muted">Complaints</p>
-          <p className="mt-1 text-h2 text-navy">{stats.totalComplaints}</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-small text-muted">Open</p>
-          <p className="mt-1 text-h2 text-navy">{stats.openComplaints}</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-small text-muted">Completed/closed</p>
-          <p className="mt-1 text-h2 text-navy">{stats.completedComplaints}</p>
-        </Card>
+        <StatCard label="Users" value={stats.totalUsers} href="/admin/users" />
+        <StatCard label="Citizens" value={stats.citizens} />
+        <StatCard label="Workers" value={stats.workers} />
+        <StatCard label="Dept admins" value={stats.departmentAdmins} />
+        <StatCard
+          label="Departments"
+          value={stats.departments}
+          href="/admin/departments"
+        />
+        <StatCard
+          label="Complaints"
+          value={stats.totalComplaints}
+          href="/admin/complaints"
+        />
+        <StatCard label="Open" value={stats.openComplaints} href="/admin/complaints" />
+        <StatCard label="Completed/closed" value={stats.completedComplaints} />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Card className="p-5">
-          <CardTitle>Users</CardTitle>
-          <CardDescription className="mt-2">
-            Manage roles, departments, and account status.
-          </CardDescription>
-          <Link href="/admin/users" className="mt-3 inline-block text-small font-medium text-brand">
-            Open users
-          </Link>
-        </Card>
-        <Card className="p-5">
-          <CardTitle>Departments</CardTitle>
-          <CardDescription className="mt-2">
-            Create and maintain municipal departments.
-          </CardDescription>
-          <Link
-            href="/admin/departments"
-            className="mt-3 inline-block text-small font-medium text-brand"
-          >
-            Open departments
-          </Link>
-        </Card>
-        <Card className="p-5">
-          <CardTitle>Complaints</CardTitle>
-          <CardDescription className="mt-2">
-            View all complaints and apply administrative overrides.
-          </CardDescription>
-          <Link
-            href="/admin/complaints"
-            className="mt-3 inline-block text-small font-medium text-brand"
-          >
-            Open complaints
-          </Link>
-        </Card>
-      </div>
+      <Suspense fallback={<DashboardInsightsFallback />}>
+        <AdminDashboardInsights />
+      </Suspense>
     </div>
   );
 }

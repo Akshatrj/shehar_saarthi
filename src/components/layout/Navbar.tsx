@@ -3,6 +3,7 @@ import { cn } from "@/lib/cn";
 import { Logo } from "@/components/layout/Logo";
 import { NavLinks } from "@/components/layout/NavLinks";
 import { MobileNav } from "@/components/layout/MobileNav";
+import { NavbarFrame } from "@/components/layout/NavbarFrame";
 
 export type NavItem = {
   href: string;
@@ -23,7 +24,7 @@ export function Navbar({
   const hasItems = items.length > 0;
 
   return (
-    <header className="relative sticky top-0 z-40 border-b border-line/80 bg-paper-raised/95 shadow-sm backdrop-blur-sm">
+    <NavbarFrame>
       <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5">
         <Logo compact={compactLogo} />
         {hasItems ? (
@@ -53,6 +54,6 @@ export function Navbar({
           ) : null}
         </div>
       </div>
-    </header>
+    </NavbarFrame>
   );
 }

@@ -198,7 +198,7 @@ async function testValidUpload() {
   });
   assert.ok(history);
   assert.equal(history?.action, "SUBMITTED");
-  assert.equal(history?.toStatus, "SUBMITTED");
+  assert.equal(history?.newStatus, "SUBMITTED");
 
   await prisma.complaintHistory.deleteMany({ where: { complaintId: created.id } });
   await prisma.complaint.delete({ where: { id: created.id } });

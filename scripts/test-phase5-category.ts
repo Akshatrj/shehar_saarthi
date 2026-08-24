@@ -78,7 +78,7 @@ async function testRoutingRules() {
   const roads = await resolveDepartmentIdForRouting({
     category: "POTHOLE",
   });
-  assert.equal(roads.slug, "roads");
+  assert.equal(roads.code, "roads");
 
   await assert.rejects(
     () =>
@@ -93,7 +93,7 @@ async function testRoutingRules() {
     category: "OTHER",
     manualDepartmentSlug: "sanitation",
   });
-  assert.equal(other.slug, "sanitation");
+  assert.equal(other.code, "sanitation");
 }
 
 async function testComplaintFlows() {
@@ -159,13 +159,13 @@ async function testComplaintFlows() {
   });
   assert.equal(routed?.status, "ROUTED");
   assert.equal(routed?.category, "POTHOLE");
-  assert.equal(routed?.department?.slug, "roads");
+  assert.equal(routed?.department?.code, "roads");
 
   const history = await prisma.complaintHistory.findFirst({
     where: { complaintId: complaint.id, action: "CATEGORY_CONFIRMED" },
   });
   assert.ok(history);
-  assert.match(history?.note ?? "", /AI_CONFIRMED/);
+  assert.match(history?.metadata ?? "", /AI_CONFIRMED/);
 
   await assert.rejects(
     () => confirmCitizenCategory(owner, complaint.id),
@@ -196,7 +196,7 @@ async function testComplaintFlows() {
     include: { department: true },
   });
   assert.equal(manualRouted?.category, "OTHER");
-  assert.equal(manualRouted?.department?.slug, "parks");
+  assert.equal(manualRouted?.department?.code, "parks");
 
   await assert.rejects(
     () => changeCitizenCategory(owner, manualComplaint.id, "GARBAGE"),
@@ -228,13 +228,13 @@ async function testComplaintFlows() {
     where: { id: changeComplaint.id },
     include: { department: true },
   });
-  assert.equal(changed?.department?.slug, "sanitation");
+  assert.equal(changed?.department?.code, "sanitation");
 
   const changedHistory = await prisma.complaintHistory.findFirst({
     where: { complaintId: changeComplaint.id, action: "CATEGORY_CHANGED" },
   });
   assert.ok(changedHistory);
-  assert.match(changedHistory?.note ?? "", /USER_SELECTED/);
+  assert.match(changedHistory?.metadata ?? "", /USER_SELECTED/);
 
   await prisma.complaintHistory.deleteMany({
     where: {

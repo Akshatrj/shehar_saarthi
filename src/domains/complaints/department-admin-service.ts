@@ -66,7 +66,7 @@ export function parseDepartmentAdminPage(value: unknown) {
 export async function getDepartmentAdminStats(
   departmentId: string,
 ): Promise<DepartmentAdminComplaintStats> {
-  const [total, routed, assigned, inProgress, completed] = await Promise.all([
+  const [total, routed, assigned, inProgress, completed, closed] = await Promise.all([
     prisma.complaint.count({ where: { departmentId } }),
     prisma.complaint.count({ where: { departmentId, status: "ROUTED" } }),
     prisma.complaint.count({ where: { departmentId, status: "ASSIGNED" } }),
@@ -74,9 +74,10 @@ export async function getDepartmentAdminStats(
       where: { departmentId, status: "IN_PROGRESS" },
     }),
     prisma.complaint.count({ where: { departmentId, status: "COMPLETED" } }),
+    prisma.complaint.count({ where: { departmentId, status: "CLOSED" } }),
   ]);
 
-  return { total, routed, assigned, inProgress, completed };
+  return { total, routed, assigned, inProgress, completed, closed };
 }
 
 export async function listDepartmentAdminComplaints(

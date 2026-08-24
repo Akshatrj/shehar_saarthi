@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalDocument, LegalSection } from "@/components/public/LegalDocument";
+import {
+  PUBLIC_REPORT_HREF,
+  PUBLIC_TRACK_HREF,
+} from "@/lib/public-routes";
 
 export const metadata: Metadata = {
   title: "Contact",
@@ -10,12 +14,12 @@ export const metadata: Metadata = {
 
 const desks = [
   {
-    href: "/report",
+    href: PUBLIC_REPORT_HREF,
     label: "Report an issue",
     detail: "Sign in as a citizen, then submit a photo and location.",
   },
   {
-    href: "/complaints",
+    href: PUBLIC_TRACK_HREF,
     label: "Track your reports",
     detail: "Open the status of complaints filed from your account.",
   },

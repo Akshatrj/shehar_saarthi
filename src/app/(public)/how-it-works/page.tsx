@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { PublicPage } from "@/components/layout/PublicPage";
 import { ButtonLink } from "@/components/ui/Button";
+import { PUBLIC_REPORT_HREF } from "@/lib/public-routes";
 import { workflowSteps } from "@/content/landing";
 
 export const metadata: Metadata = {
@@ -30,7 +31,7 @@ export default function HowItWorksPage() {
         ))}
       </ol>
       <div className="mt-10">
-        <ButtonLink href="/report">Report an issue</ButtonLink>
+        <ButtonLink href={PUBLIC_REPORT_HREF}>Report an issue</ButtonLink>
       </div>
     </PublicPage>
   );

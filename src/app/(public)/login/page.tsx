@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { AuthScreen } from "@/components/auth/AuthScreen";
-import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
+import { GoogleSignInPanel } from "@/components/auth/GoogleSignInButton";
 import { Alert } from "@/components/ui/Alert";
 import { auth } from "@/lib/auth";
+import { isGoogleAuthConfigured } from "@/lib/auth-env";
 import { portalPathForRole } from "@/lib/rbac";
 
 export const metadata: Metadata = {
@@ -31,6 +32,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   }
 
   const callbackUrl = resolveCallbackUrl(params.callbackUrl);
+  const googleConfigured = isGoogleAuthConfigured();
 
   return (
     <AuthScreen
@@ -63,7 +65,25 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             account.
           </Alert>
         ) : null}
-        <GoogleSignInButton callbackUrl={callbackUrl} />
+        {params.error === "Configuration" ? (
+          <Alert variant="danger" title="Google sign-in is not configured">
+            Add <code className="text-small">AUTH_GOOGLE_ID</code> and{" "}
+            <code className="text-small">AUTH_GOOGLE_SECRET</code> to{" "}
+            <code className="text-small">.env.local</code>, then restart{" "}
+            <code className="text-small">npm run dev</code>. Use the redirect URI{" "}
+            <code className="text-small">/api/auth/callback/google</code> in Google
+            Cloud Console.
+          </Alert>
+        ) : null}
+        {!googleConfigured ? (
+          <Alert variant="danger" title="Google sign-in is not configured">
+            Add <code className="text-small">AUTH_GOOGLE_ID</code> and{" "}
+            <code className="text-small">AUTH_GOOGLE_SECRET</code> to{" "}
+            <code className="text-small">.env.local</code>, then restart{" "}
+            <code className="text-small">npm run dev</code>.
+          </Alert>
+        ) : null}
+        <GoogleSignInPanel callbackUrl={callbackUrl} disabled={!googleConfigured} />
       </div>
     </AuthScreen>
   );

@@ -1,10 +1,10 @@
 import NextAuth from "next-auth";
-import type { UserRole } from "@/domains/auth/types";
 import { authConfig } from "@/lib/auth.config";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   callbacks: {
+    ...authConfig.callbacks,
     async signIn({ user, account }) {
       if (account?.provider !== "google" || !user.email) {
         return false;
@@ -34,7 +34,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           name: user.name,
           image: user.image,
         });
+        token.sub = synced.id;
         token.userId = synced.id;
+        token.email = user.email;
         token.role = synced.role;
         token.departmentId = synced.departmentId;
         token.isActive = synced.isActive;
@@ -53,27 +55,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
 
       return token;
-    },
-    async session({ session, token }) {
-      const role: UserRole =
-        token.role === "WORKER" ||
-        token.role === "DEPARTMENT_ADMIN" ||
-        token.role === "SUPER_ADMIN" ||
-        token.role === "CITIZEN"
-          ? token.role
-          : "CITIZEN";
-
-      return {
-        ...session,
-        user: {
-          ...session.user,
-          id: typeof token.userId === "string" ? token.userId : "",
-          role,
-          departmentId:
-            typeof token.departmentId === "string" ? token.departmentId : null,
-          isActive: token.isActive !== false,
-        },
-      };
     },
   },
 });

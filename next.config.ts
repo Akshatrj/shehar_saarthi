@@ -18,6 +18,20 @@ const nextConfig: NextConfig = {
     middlewareClientMaxBodySize: "8mb",
     optimizePackageImports: ["leaflet", "leaflet.markercluster", "lucide-react"],
   },
+  async redirects() {
+    return [
+      {
+        source: "/report",
+        destination: "/login?callbackUrl=%2Fcitizen%2Freport",
+        permanent: false,
+      },
+      {
+        source: "/complaints",
+        destination: "/login?callbackUrl=%2Fcitizen",
+        permanent: false,
+      },
+    ];
+  },
   async headers() {
     return [
       {

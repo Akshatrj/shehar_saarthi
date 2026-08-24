@@ -1,21 +1,10 @@
 import type { NextAuthConfig } from "next-auth";
 import Google from "next-auth/providers/google";
-
-function googleClientId() {
-  return (
-    process.env.AUTH_GOOGLE_ID?.trim() ||
-    process.env.GOOGLE_CLIENT_ID?.trim() ||
-    ""
-  );
-}
-
-function googleClientSecret() {
-  return (
-    process.env.AUTH_GOOGLE_SECRET?.trim() ||
-    process.env.GOOGLE_CLIENT_SECRET?.trim() ||
-    ""
-  );
-}
+import { mapAuthSession } from "@/lib/auth-session";
+import {
+  googleClientId,
+  googleClientSecret,
+} from "@/lib/auth-env";
 
 export const authConfig = {
   trustHost: true,
@@ -24,9 +13,19 @@ export const authConfig = {
     Google({
       clientId: googleClientId(),
       clientSecret: googleClientSecret(),
+      authorization: {
+        params: {
+          scope: "openid email profile",
+        },
+      },
     }),
   ],
   pages: {
     signIn: "/login",
+  },
+  callbacks: {
+    async session({ session, token }) {
+      return mapAuthSession({ session, token });
+    },
   },
 } satisfies NextAuthConfig;

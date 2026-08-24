@@ -7,45 +7,45 @@ function testTimeline() {
       {
         id: "1",
         action: "SUBMITTED",
-        fromStatus: null,
-        toStatus: "SUBMITTED",
-        note: null,
+        oldStatus: null,
+        newStatus: "SUBMITTED",
+        metadata: null,
         createdAt: "2026-01-01T10:00:00.000Z",
       },
       {
         id: "2",
         action: "CATEGORY_CONFIRMED",
-        fromStatus: "SUBMITTED",
-        toStatus: "ROUTED",
-        note: JSON.stringify({
+        oldStatus: "SUBMITTED",
+        newStatus: "ROUTED",
+        metadata: JSON.stringify({
           category: "POTHOLE",
           routingMethod: "AI_CONFIRMED",
-          departmentSlug: "roads",
+          departmentCode: "roads",
         }),
         createdAt: "2026-01-01T11:00:00.000Z",
       },
       {
         id: "3",
         action: "ASSIGNED_TO_SELF",
-        fromStatus: "ROUTED",
-        toStatus: "ASSIGNED",
-        note: null,
+        oldStatus: "ROUTED",
+        newStatus: "ASSIGNED",
+        metadata: null,
         createdAt: "2026-01-01T12:00:00.000Z",
       },
       {
         id: "4",
         action: "STARTED_PROGRESS",
-        fromStatus: "ASSIGNED",
-        toStatus: "IN_PROGRESS",
-        note: null,
+        oldStatus: "ASSIGNED",
+        newStatus: "IN_PROGRESS",
+        metadata: null,
         createdAt: "2026-01-01T13:00:00.000Z",
       },
       {
         id: "5",
         action: "MARKED_COMPLETED",
-        fromStatus: "IN_PROGRESS",
-        toStatus: "COMPLETED",
-        note: null,
+        oldStatus: "IN_PROGRESS",
+        newStatus: "COMPLETED",
+        metadata: null,
         createdAt: "2026-01-01T14:00:00.000Z",
       },
     ],
@@ -57,7 +57,7 @@ function testTimeline() {
   assert.equal(timeline[1]?.label, "AI category suggested");
   assert.equal(timeline[2]?.label, "Category confirmed");
   assert.equal(timeline[3]?.label, "Routed to Roads");
-  assert.equal(timeline[4]?.label, "Assigned to staff");
+  assert.equal(timeline[4]?.label, "Assigned to worker");
   assert.equal(timeline[5]?.label, "Work started");
   assert.equal(timeline[6]?.label, "Completed");
 }

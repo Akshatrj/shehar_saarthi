@@ -9,20 +9,9 @@ export default function PublicLayout({
   return (
     <PublicShell
       actions={
-        <>
-          <ButtonLink
-            href="/login"
-            variant="ghost"
-            size="sm"
-            className="hidden sm:inline-flex"
-          >
-            Sign in
-          </ButtonLink>
-          <ButtonLink href="/login" size="sm">
-            <span className="sm:hidden">Sign in</span>
-            <span className="hidden sm:inline">Sign in</span>
-          </ButtonLink>
-        </>
+        <ButtonLink href="/login" size="sm">
+          Sign in
+        </ButtonLink>
       }
     >
       {children}

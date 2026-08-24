@@ -145,6 +145,7 @@ export type DepartmentAdminComplaintStats = {
   assigned: number;
   inProgress: number;
   completed: number;
+  closed: number;
 };
 
 export type DepartmentAdminComplaintListItem = WorkerComplaintListItem;

@@ -1,4 +1,5 @@
 import { ButtonLink } from "@/components/ui/Button";
+import { PUBLIC_REPORT_HREF } from "@/lib/public-routes";
 import { PublicShell } from "@/components/layout/PublicShell";
 import { PublicPage } from "@/components/layout/PublicPage";
 
@@ -15,7 +16,7 @@ export default function NotFound() {
           >
             Sign in
           </ButtonLink>
-          <ButtonLink href="/report" size="sm">
+          <ButtonLink href={PUBLIC_REPORT_HREF} size="sm">
             Report an issue
           </ButtonLink>
         </>

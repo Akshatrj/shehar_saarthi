@@ -190,9 +190,128 @@ h3,
 
 .ss-hero-gradient {
   background:
-    radial-gradient(circle at 20% 0%, rgb(30 136 229 / 0.18), transparent 45%),
-    radial-gradient(circle at 80% 100%, rgb(255 143 0 / 0.08), transparent 40%),
+    radial-gradient(circle at 20% 0%, rgb(30 136 229 / 0.22), transparent 45%),
+    radial-gradient(circle at 85% 20%, rgb(79 195 247 / 0.12), transparent 38%),
+    radial-gradient(circle at 80% 100%, rgb(255 143 0 / 0.12), transparent 40%),
+    radial-gradient(circle at 65% 45%, rgb(76 175 80 / 0.06), transparent 35%),
     linear-gradient(160deg, #0a192f 0%, #112240 55%, #0d2137 100%);
+}
+
+.ss-hero-logo-ambient {
+  background:
+    radial-gradient(circle at 50% 40%, rgb(79 195 247 / 0.45), transparent 58%),
+    radial-gradient(circle at 62% 72%, rgb(255 143 0 / 0.28), transparent 52%),
+    radial-gradient(circle at 30% 68%, rgb(76 175 80 / 0.18), transparent 48%);
+}
+
+.ss-hero-logo-ring {
+  animation: ss-hero-logo-pulse 5s ease-in-out infinite;
+}
+
+.ss-hero-logo-ring--delay {
+  animation-delay: 2.5s;
+}
+
+.ss-reveal {
+  opacity: 0;
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform, filter;
+}
+
+.ss-reveal--fade-up {
+  transform: translateY(1.75rem);
+}
+
+.ss-reveal--fade-down {
+  transform: translateY(-1.75rem);
+}
+
+.ss-reveal--fade-left {
+  transform: translateX(2rem);
+}
+
+.ss-reveal--fade-right {
+  transform: translateX(-2rem);
+}
+
+.ss-reveal--fade-in {
+  transform: none;
+}
+
+.ss-reveal--scale-up {
+  transform: scale(0.94);
+}
+
+.ss-reveal--blur-in {
+  transform: translateY(1.25rem);
+  filter: blur(8px);
+}
+
+.ss-reveal--visible {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+.ss-hero-enter {
+  opacity: 0;
+  transform: translateY(1.5rem);
+  transition:
+    opacity 0.85s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ss-hero-enter--visible {
+  opacity: 1;
+  transform: none;
+}
+
+.ss-hero-enter--1 {
+  transition-delay: 80ms;
+}
+
+.ss-hero-enter--2 {
+  transition-delay: 180ms;
+}
+
+.ss-hero-enter--3 {
+  transition-delay: 280ms;
+}
+
+.ss-hero-enter--4 {
+  transition-delay: 380ms;
+}
+
+.ss-hero-enter--5 {
+  transition-delay: 480ms;
+  transform: translateY(1.5rem) scale(0.96);
+}
+
+.ss-hero-enter--5.ss-hero-enter--visible {
+  transform: none;
+}
+
+.ss-navbar-scrolled {
+  border-color: rgb(30 136 229 / 0.18);
+  background: rgb(255 255 255 / 0.96);
+  box-shadow:
+    0 10px 30px rgb(10 25 47 / 0.08),
+    0 1px 0 rgb(30 136 229 / 0.06);
+}
+
+@keyframes ss-hero-logo-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.02);
+  }
 }
 
 .ss-brand-text {
@@ -202,6 +321,19 @@ h3,
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+
+  .ss-hero-logo-ring {
+    animation: none;
+    opacity: 0.6;
+  }
+
+  .ss-reveal,
+  .ss-hero-enter {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
   }
 
   *,

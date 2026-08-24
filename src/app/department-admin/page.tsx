@@ -1,10 +1,13 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { PaginationNav } from "@/components/ui/PaginationNav";
+import { DashboardInsightsFallback } from "@/components/dashboard/DashboardInsightsFallback";
 import { DepartmentAdminComplaintFilters } from "@/components/department-admin/DepartmentAdminComplaintFilters";
 import { DepartmentAdminComplaintTable } from "@/components/department-admin/DepartmentAdminComplaintTable";
 import { DepartmentAdminStatsGrid } from "@/components/department-admin/DepartmentAdminStatsGrid";
+import { DepartmentDashboardInsights } from "@/components/department-admin/DepartmentDashboardInsights";
 import {
   getDepartmentAdminDepartment,
   getDepartmentAdminStats,
@@ -83,6 +86,13 @@ export default async function DepartmentAdminHomePage({
       />
 
       <DepartmentAdminStatsGrid stats={stats} />
+
+      <Suspense fallback={<DashboardInsightsFallback />}>
+        <DepartmentDashboardInsights
+          departmentId={adminContext.departmentId}
+          departmentName={department?.name ?? "Department"}
+        />
+      </Suspense>
 
       <Card className="flex flex-col gap-4 p-5">
         <div className="flex flex-col gap-1">
