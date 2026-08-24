@@ -56,7 +56,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async session({ session, token }) {
       const role: UserRole =
-        token.role === "STAFF" ||
+        token.role === "WORKER" ||
+        token.role === "DEPARTMENT_ADMIN" ||
         token.role === "SUPER_ADMIN" ||
         token.role === "CITIZEN"
           ? token.role

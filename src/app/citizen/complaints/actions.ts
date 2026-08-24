@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireCitizenPortal } from "@/lib/auth/require";
+import { requireCitizen } from "@/lib/auth/require";
 import {
   CategoryConfirmationError,
   changeCitizenCategory,
@@ -26,7 +26,7 @@ export async function confirmCategory(
   complaintId: string,
 ): Promise<CategoryActionResult> {
   try {
-    const user = await requireCitizenPortal();
+    const user = await requireCitizen();
     if (!complaintId?.trim()) {
       return failure("Complaint id is required.");
     }
@@ -51,7 +51,7 @@ export async function changeCategory(
   departmentSlug?: string,
 ): Promise<CategoryActionResult> {
   try {
-    const user = await requireCitizenPortal();
+    const user = await requireCitizen();
     if (!complaintId?.trim()) {
       return failure("Complaint id is required.");
     }

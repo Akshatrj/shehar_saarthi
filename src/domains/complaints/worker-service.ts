@@ -1,10 +1,10 @@
 import { prisma } from "@/lib/db";
 import type { AuthUser } from "@/lib/rbac";
 import {
-  STAFF_PAGE_SIZE,
-  type StaffComplaintDetail,
-  type StaffComplaintListItem,
-  type StaffComplaintStats,
+  WORKER_PAGE_SIZE,
+  type WorkerComplaintDetail,
+  type WorkerComplaintListItem,
+  type WorkerComplaintStats,
 } from "@/domains/complaints/constants";
 import {
   COMPLAINT_STATUSES,
@@ -12,45 +12,47 @@ import {
 } from "@/domains/complaints/types";
 import { assertValidTransition } from "@/domains/complaints/transitions";
 
-export class StaffComplaintError extends Error {
+export class WorkerComplaintError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = "StaffComplaintError";
+    this.name = "WorkerComplaintError";
   }
 }
 
-export type StaffContext = {
-  staffId: string;
+export type WorkerContext = {
+  workerId: string;
   departmentId: string;
 };
 
-export function requireStaffContext(actor: AuthUser): StaffContext {
-  if (actor.role !== "STAFF") {
-    throw new StaffComplaintError("Staff access is required.");
+export function requireWorkerContext(actor: AuthUser): WorkerContext {
+  if (actor.role !== "WORKER") {
+    throw new WorkerComplaintError("Worker access is required.");
   }
   if (!actor.departmentId) {
-    throw new StaffComplaintError(
+    throw new WorkerComplaintError(
       "Your account is not linked to a department yet.",
     );
   }
   return {
-    staffId: actor.id,
+    workerId: actor.id,
     departmentId: actor.departmentId,
   };
 }
 
-export function parseStaffStatusFilter(value: unknown): ComplaintStatus | undefined {
+export function parseWorkerStatusFilter(
+  value: unknown,
+): ComplaintStatus | undefined {
   if (typeof value !== "string" || !value.trim()) {
     return undefined;
   }
   const normalized = value.trim().toUpperCase();
   if (!COMPLAINT_STATUSES.includes(normalized as ComplaintStatus)) {
-    throw new StaffComplaintError("Invalid status filter.");
+    throw new WorkerComplaintError("Invalid status filter.");
   }
   return normalized as ComplaintStatus;
 }
 
-export function parseStaffPage(value: unknown) {
+export function parseWorkerPage(value: unknown) {
   const parsed = typeof value === "string" ? Number(value) : Number.NaN;
   if (!Number.isFinite(parsed) || parsed < 1) {
     return 1;
@@ -58,37 +60,49 @@ export function parseStaffPage(value: unknown) {
   return Math.floor(parsed);
 }
 
-export async function getStaffComplaintStats(
-  departmentId: string,
-): Promise<StaffComplaintStats> {
-  const [total, routed, assigned, inProgress, completed] = await Promise.all([
-    prisma.complaint.count({ where: { departmentId } }),
-    prisma.complaint.count({ where: { departmentId, status: "ROUTED" } }),
-    prisma.complaint.count({ where: { departmentId, status: "ASSIGNED" } }),
+export async function getWorkerComplaintStats(
+  workerId: string,
+): Promise<WorkerComplaintStats> {
+  const [assigned, inProgress, completed] = await Promise.all([
     prisma.complaint.count({
-      where: { departmentId, status: "IN_PROGRESS" },
+      where: { assignedWorkerId: workerId, status: "ASSIGNED" },
     }),
-    prisma.complaint.count({ where: { departmentId, status: "COMPLETED" } }),
+    prisma.complaint.count({
+      where: { assignedWorkerId: workerId, status: "IN_PROGRESS" },
+    }),
+    prisma.complaint.count({
+      where: { assignedWorkerId: workerId, status: "COMPLETED" },
+    }),
   ]);
 
-  return { total, routed, assigned, inProgress, completed };
+  return { assigned, inProgress, completed };
 }
 
-export async function listStaffComplaints(
-  departmentId: string,
+function workerComplaintWhere(worker: WorkerContext) {
+  return {
+    departmentId: worker.departmentId,
+    OR: [
+      { assignedWorkerId: worker.workerId },
+      { status: "ROUTED" as const, assignedWorkerId: null },
+    ],
+  };
+}
+
+export async function listWorkerComplaints(
+  worker: WorkerContext,
   input: { status?: ComplaintStatus; page?: number },
 ) {
   const page = input.page && input.page > 0 ? input.page : 1;
   const where = {
-    departmentId,
+    ...workerComplaintWhere(worker),
     ...(input.status ? { status: input.status } : {}),
   };
 
   const rows = await prisma.complaint.findMany({
     where,
     orderBy: { createdAt: "desc" },
-    skip: (page - 1) * STAFF_PAGE_SIZE,
-    take: STAFF_PAGE_SIZE + 1,
+    skip: (page - 1) * WORKER_PAGE_SIZE,
+    take: WORKER_PAGE_SIZE + 1,
     select: {
       id: true,
       publicRef: true,
@@ -103,10 +117,10 @@ export async function listStaffComplaints(
     },
   });
 
-  const hasMore = rows.length > STAFF_PAGE_SIZE;
-  const pageRows = hasMore ? rows.slice(0, STAFF_PAGE_SIZE) : rows;
+  const hasMore = rows.length > WORKER_PAGE_SIZE;
+  const pageRows = hasMore ? rows.slice(0, WORKER_PAGE_SIZE) : rows;
 
-  const complaints: StaffComplaintListItem[] = pageRows.map((row) => ({
+  const complaints: WorkerComplaintListItem[] = pageRows.map((row) => ({
     id: row.id,
     publicRef: row.publicRef,
     description: row.description,
@@ -120,12 +134,15 @@ export async function listStaffComplaints(
   return { complaints, page, hasMore };
 }
 
-export async function getStaffComplaintDetail(
-  departmentId: string,
+export async function getWorkerComplaintDetail(
+  worker: WorkerContext,
   complaintId: string,
-): Promise<StaffComplaintDetail | null> {
+): Promise<WorkerComplaintDetail | null> {
   const row = await prisma.complaint.findFirst({
-    where: { id: complaintId, departmentId },
+    where: {
+      id: complaintId,
+      ...workerComplaintWhere(worker),
+    },
     select: {
       id: true,
       publicRef: true,
@@ -139,8 +156,9 @@ export async function getStaffComplaintDetail(
       longitude: true,
       locationLabel: true,
       createdAt: true,
+      assignedWorkerId: true,
       department: {
-        select: { id: true, name: true, slug: true },
+        select: { id: true, name: true, code: true },
       },
       assignedWorker: {
         select: { id: true, name: true },
@@ -150,9 +168,9 @@ export async function getStaffComplaintDetail(
         select: {
           id: true,
           action: true,
-          fromStatus: true,
-          toStatus: true,
-          note: true,
+          oldStatus: true,
+          newStatus: true,
+          metadata: true,
           createdAt: true,
           actor: {
             select: { id: true, name: true },
@@ -179,14 +197,15 @@ export async function getStaffComplaintDetail(
     longitude: row.longitude.toString(),
     locationLabel: row.locationLabel,
     createdAt: row.createdAt.toISOString(),
+    assignedWorkerId: row.assignedWorkerId,
     department: row.department,
     assignedWorker: row.assignedWorker,
     history: row.history.map((entry) => ({
       id: entry.id,
       action: entry.action,
-      fromStatus: entry.fromStatus,
-      toStatus: entry.toStatus,
-      note: entry.note,
+      oldStatus: entry.oldStatus,
+      newStatus: entry.newStatus,
+      metadata: entry.metadata,
       createdAt: entry.createdAt.toISOString(),
       actor: entry.actor,
     })),
@@ -194,22 +213,22 @@ export async function getStaffComplaintDetail(
 }
 
 export async function assignComplaintToSelf(
-  staff: StaffContext,
+  worker: WorkerContext,
   complaintId: string,
 ) {
   await prisma.$transaction(async (tx) => {
     const complaint = await tx.complaint.findFirst({
-      where: { id: complaintId, departmentId: staff.departmentId },
+      where: {
+        id: complaintId,
+        departmentId: worker.departmentId,
+        status: "ROUTED",
+      },
       select: { id: true, status: true },
     });
 
     if (!complaint) {
-      throw new StaffComplaintError("Complaint not found.");
-    }
-
-    if (complaint.status !== "ROUTED") {
-      throw new StaffComplaintError(
-        "Only routed complaints can be assigned to yourself.",
+      throw new WorkerComplaintError(
+        "Only routed complaints in your department can be self-assigned.",
       );
     }
 
@@ -218,7 +237,7 @@ export async function assignComplaintToSelf(
     await tx.complaint.update({
       where: { id: complaint.id },
       data: {
-        assignedWorkerId: staff.staffId,
+        assignedWorkerId: worker.workerId,
         status: "ASSIGNED",
       },
     });
@@ -226,38 +245,36 @@ export async function assignComplaintToSelf(
     await tx.complaintHistory.create({
       data: {
         complaintId: complaint.id,
-        actorId: staff.staffId,
+        actorId: worker.workerId,
         action: "ASSIGNED_TO_SELF",
-        fromStatus: "ROUTED",
-        toStatus: "ASSIGNED",
+        oldStatus: "ROUTED",
+        newStatus: "ASSIGNED",
       },
     });
   });
 }
 
 export async function startComplaintProgress(
-  staff: StaffContext,
+  worker: WorkerContext,
   complaintId: string,
 ) {
   await prisma.$transaction(async (tx) => {
     const complaint = await tx.complaint.findFirst({
-      where: { id: complaintId, departmentId: staff.departmentId },
-      select: { id: true, status: true, assignedWorkerId: true },
+      where: {
+        id: complaintId,
+        departmentId: worker.departmentId,
+        assignedWorkerId: worker.workerId,
+      },
+      select: { id: true, status: true },
     });
 
     if (!complaint) {
-      throw new StaffComplaintError("Complaint not found.");
+      throw new WorkerComplaintError("Complaint not found.");
     }
 
     if (complaint.status !== "ASSIGNED") {
-      throw new StaffComplaintError(
+      throw new WorkerComplaintError(
         "Only assigned complaints can be marked in progress.",
-      );
-    }
-
-    if (complaint.assignedWorkerId !== staff.staffId) {
-      throw new StaffComplaintError(
-        "Only the assigned worker can update this complaint.",
       );
     }
 
@@ -271,38 +288,36 @@ export async function startComplaintProgress(
     await tx.complaintHistory.create({
       data: {
         complaintId: complaint.id,
-        actorId: staff.staffId,
+        actorId: worker.workerId,
         action: "STARTED_PROGRESS",
-        fromStatus: "ASSIGNED",
-        toStatus: "IN_PROGRESS",
+        oldStatus: "ASSIGNED",
+        newStatus: "IN_PROGRESS",
       },
     });
   });
 }
 
-export async function completeStaffComplaint(
-  staff: StaffContext,
+export async function completeWorkerComplaint(
+  worker: WorkerContext,
   complaintId: string,
 ) {
   await prisma.$transaction(async (tx) => {
     const complaint = await tx.complaint.findFirst({
-      where: { id: complaintId, departmentId: staff.departmentId },
-      select: { id: true, status: true, assignedWorkerId: true },
+      where: {
+        id: complaintId,
+        departmentId: worker.departmentId,
+        assignedWorkerId: worker.workerId,
+      },
+      select: { id: true, status: true },
     });
 
     if (!complaint) {
-      throw new StaffComplaintError("Complaint not found.");
+      throw new WorkerComplaintError("Complaint not found.");
     }
 
     if (complaint.status !== "IN_PROGRESS") {
-      throw new StaffComplaintError(
+      throw new WorkerComplaintError(
         "Only in-progress complaints can be marked completed.",
-      );
-    }
-
-    if (complaint.assignedWorkerId !== staff.staffId) {
-      throw new StaffComplaintError(
-        "Only the assigned worker can update this complaint.",
       );
     }
 
@@ -316,10 +331,10 @@ export async function completeStaffComplaint(
     await tx.complaintHistory.create({
       data: {
         complaintId: complaint.id,
-        actorId: staff.staffId,
+        actorId: worker.workerId,
         action: "MARKED_COMPLETED",
-        fromStatus: "IN_PROGRESS",
-        toStatus: "COMPLETED",
+        oldStatus: "IN_PROGRESS",
+        newStatus: "COMPLETED",
       },
     });
   });

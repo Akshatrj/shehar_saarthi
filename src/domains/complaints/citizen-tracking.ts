@@ -111,16 +111,16 @@ export async function getCitizenComplaintDetail(
       locationLabel: true,
       createdAt: true,
       department: {
-        select: { id: true, name: true, slug: true },
+        select: { id: true, name: true, code: true },
       },
       history: {
         orderBy: { createdAt: "asc" },
         select: {
           id: true,
           action: true,
-          fromStatus: true,
-          toStatus: true,
-          note: true,
+          oldStatus: true,
+          newStatus: true,
+          metadata: true,
           createdAt: true,
         },
       },
@@ -134,9 +134,9 @@ export async function getCitizenComplaintDetail(
   const history = row.history.map((entry) => ({
     id: entry.id,
     action: entry.action,
-    fromStatus: entry.fromStatus,
-    toStatus: entry.toStatus,
-    note: entry.note,
+    oldStatus: entry.oldStatus,
+    newStatus: entry.newStatus,
+    metadata: entry.metadata,
     createdAt: entry.createdAt.toISOString(),
   }));
 

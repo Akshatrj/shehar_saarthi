@@ -1,17 +1,17 @@
 import { prisma } from "./client";
 
 const DEPARTMENTS = [
-  { name: "Roads", slug: "roads" },
-  { name: "Sanitation", slug: "sanitation" },
-  { name: "Electrical", slug: "electrical" },
-  { name: "Water", slug: "water" },
-  { name: "Parks", slug: "parks" },
+  { name: "Roads", code: "roads" },
+  { name: "Sanitation", code: "sanitation" },
+  { name: "Electrical", code: "electrical" },
+  { name: "Water", code: "water" },
+  { name: "Parks", code: "parks" },
 ] as const;
 
 async function main() {
   for (const department of DEPARTMENTS) {
     await prisma.department.upsert({
-      where: { slug: department.slug },
+      where: { code: department.code },
       update: { name: department.name, isActive: true },
       create: department,
     });
@@ -29,12 +29,14 @@ async function main() {
     update: {
       role: "SUPER_ADMIN",
       name: "Super Admin",
+      departmentId: null,
       isActive: true,
     },
     create: {
       email: superAdminEmail,
       role: "SUPER_ADMIN",
       name: "Super Admin",
+      departmentId: null,
       isActive: true,
     },
   });

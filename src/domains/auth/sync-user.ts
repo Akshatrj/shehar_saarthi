@@ -21,8 +21,16 @@ function isSuperAdminEmail(email: string) {
 }
 
 function asUserRole(value: string): UserRole {
-  if (value === "STAFF" || value === "SUPER_ADMIN" || value === "CITIZEN") {
+  if (
+    value === "WORKER" ||
+    value === "DEPARTMENT_ADMIN" ||
+    value === "SUPER_ADMIN" ||
+    value === "CITIZEN"
+  ) {
     return value;
+  }
+  if (value === "STAFF") {
+    return "WORKER";
   }
   return "CITIZEN";
 }

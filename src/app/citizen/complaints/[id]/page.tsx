@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { getCitizenComplaintDetail } from "@/domains/complaints/citizen-tracking";
-import { requireCitizenPortal } from "@/lib/auth/require";
+import { requireCitizen } from "@/lib/auth/require";
 import {
   COMPLAINT_CATEGORY_LABELS,
   type ComplaintCategory,
@@ -26,7 +26,7 @@ function formatDate(value: string) {
 }
 
 export default async function CitizenComplaintDetailPage({ params }: PageProps) {
-  const user = await requireCitizenPortal();
+  const user = await requireCitizen();
   const { id } = await params;
   const complaint = await getCitizenComplaintDetail(user, id);
 

@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/Table";
-import type { StaffComplaintListItem } from "@/domains/complaints/constants";
+import type { WorkerComplaintListItem } from "@/domains/complaints/constants";
 import {
   COMPLAINT_CATEGORY_LABELS,
   type ComplaintCategory,
@@ -23,10 +23,10 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
-export function StaffComplaintTable({
+export function WorkerComplaintTable({
   complaints,
 }: {
-  complaints: StaffComplaintListItem[];
+  complaints: WorkerComplaintListItem[];
 }) {
   if (complaints.length === 0) {
     return (
@@ -37,7 +37,7 @@ export function StaffComplaintTable({
   }
 
   return (
-    <Table caption="Department complaints">
+    <Table caption="Worker complaints">
       <TableHeader>
         <TableRow>
           <TableHead>Photo</TableHead>
@@ -65,7 +65,7 @@ export function StaffComplaintTable({
             </TableCell>
             <TableCell>
               <Link
-                href={`/staff/complaints/${complaint.id}`}
+                href={`/worker/complaints/${complaint.id}`}
                 className="font-mono font-medium text-brand hover:text-brand-dark"
               >
                 {complaint.publicRef}

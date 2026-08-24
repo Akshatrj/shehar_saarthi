@@ -90,7 +90,7 @@ export async function listAdminComplaints(
       status: true,
       createdAt: true,
       department: {
-        select: { id: true, name: true, slug: true },
+        select: { id: true, name: true, code: true },
       },
     },
   });
@@ -107,13 +107,7 @@ export async function listAdminComplaints(
       category: row.category,
       status: row.status,
       createdAt: row.createdAt.toISOString(),
-      department: row.department
-        ? {
-            id: row.department.id,
-            name: row.department.name,
-            code: row.department.slug,
-          }
-        : null,
+      department: row.department,
     })),
     page,
     hasMore,
@@ -139,7 +133,7 @@ export async function getAdminComplaintDetail(
       status: true,
       createdAt: true,
       department: {
-        select: { id: true, name: true, slug: true },
+        select: { id: true, name: true, code: true },
       },
       citizen: {
         select: { id: true, name: true, email: true },
@@ -161,13 +155,7 @@ export async function getAdminComplaintDetail(
     aiDescription: row.aiDescription,
     status: row.status,
     createdAt: row.createdAt.toISOString(),
-    department: row.department
-      ? {
-          id: row.department.id,
-          name: row.department.name,
-          code: row.department.slug,
-        }
-      : null,
+    department: row.department,
     citizen: row.citizen,
   };
 }
@@ -195,7 +183,7 @@ export async function overrideAdminComplaint(
     }
     const department = await prisma.department.findFirst({
       where: { id: input.departmentId.trim(), isActive: true },
-      select: { id: true, name: true, slug: true },
+      select: { id: true, name: true, code: true },
     });
     if (!department) {
       throw new AdminError("Please choose an active department.");
@@ -242,9 +230,9 @@ export async function overrideAdminComplaint(
         complaintId: complaint.id,
         actorId: actor.id,
         action: "ADMIN_OVERRIDE",
-        fromStatus: complaint.status,
-        toStatus: complaint.status,
-        note: JSON.stringify({
+        oldStatus: complaint.status,
+        newStatus: complaint.status,
+        metadata: JSON.stringify({
           previousCategory: complaint.category,
           previousDepartmentId: complaint.departmentId,
           category: nextCategory,

@@ -23,7 +23,7 @@ async function main() {
     id: randomUUID(),
     email: "staff@example.com",
     name: "Staff",
-    role: "STAFF",
+    role: "WORKER",
     departmentId: randomUUID(),
     isActive: true,
   };

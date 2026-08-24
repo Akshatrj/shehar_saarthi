@@ -1,118 +1,119 @@
-generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "rhel-openssl-3.0.x"]
-}
-
-datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
-}
-
-enum UserRole {
-  CITIZEN
-  STAFF
-  SUPER_ADMIN
-}
-
-enum ComplaintStatus {
-  SUBMITTED
-  ROUTED
-  ASSIGNED
-  IN_PROGRESS
-  COMPLETED
-  CLOSED
-}
-
-enum ComplaintCategory {
-  POTHOLE
-  DAMAGED_ROAD
-  GARBAGE
-  BLOCKED_DRAIN
-  BROKEN_STREETLIGHT
-  WATER_LEAKAGE
-  FALLEN_TREE
-  DAMAGED_FOOTPATH
-  OTHER
-}
-
-model User {
-  id           String   @id @default(uuid()) @db.Uuid
-  role         UserRole
-  name         String
-  email        String   @unique
-  image        String?
-  departmentId String?  @db.Uuid
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  department         Department?        @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  complaints         Complaint[]        @relation("CitizenComplaints")
-  assignedComplaints Complaint[]        @relation("AssignedComplaints")
-  historyEntries     ComplaintHistory[]
-
-  @@index([departmentId])
-  @@map("users")
-}
-
-model Department {
-  id        String   @id @default(uuid()) @db.Uuid
-  name      String   @unique
-  slug      String   @unique
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  staff      User[]
-  complaints Complaint[]
-
-  @@map("departments")
-}
-
-model Complaint {
-  id               String             @id @default(uuid()) @db.Uuid
-  publicRef        String             @unique @db.VarChar(32)
-  citizenId        String             @db.Uuid
-  departmentId     String?            @db.Uuid
-  assignedWorkerId String?            @db.Uuid
-  category         ComplaintCategory?
-  aiCategory       ComplaintCategory?
-  aiDescription    String?
-  description      String
-  locationLabel    String?            @db.VarChar(500)
-  latitude         Decimal            @db.Decimal(9, 6)
-  longitude        Decimal            @db.Decimal(9, 6)
-  imageUrl         String
-  status           ComplaintStatus    @default(SUBMITTED)
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-
-  citizen        User               @relation("CitizenComplaints", fields: [citizenId], references: [id], onDelete: Restrict)
-  department     Department?        @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  assignedWorker User?              @relation("AssignedComplaints", fields: [assignedWorkerId], references: [id], onDelete: SetNull)
-  history        ComplaintHistory[]
-
-  @@index([departmentId, status])
-  @@index([assignedWorkerId])
-  @@index([citizenId])
-  @@index([createdAt])
-  @@map("complaints")
-}
-
-model ComplaintHistory {
-  id          String           @id @default(uuid()) @db.Uuid
-  complaintId String           @db.Uuid
-  actorId     String?          @db.Uuid
-  action      String           @db.VarChar(32)
-  fromStatus  ComplaintStatus?
-  toStatus    ComplaintStatus
-  note        String?
-  createdAt   DateTime         @default(now())
-
-  complaint Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
-  actor     User?     @relation(fields: [actorId], references: [id], onDelete: SetNull)
-
-  @@index([complaintId, createdAt])
-  @@map("complaint_history")
-}
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum UserRole {
+  CITIZEN
+  WORKER
+  DEPARTMENT_ADMIN
+  SUPER_ADMIN
+}
+
+enum ComplaintStatus {
+  SUBMITTED
+  ROUTED
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  CLOSED
+}
+
+enum ComplaintCategory {
+  POTHOLE
+  DAMAGED_ROAD
+  GARBAGE
+  BLOCKED_DRAIN
+  BROKEN_STREETLIGHT
+  WATER_LEAKAGE
+  FALLEN_TREE
+  DAMAGED_FOOTPATH
+  OTHER
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  role         UserRole
+  name         String
+  email        String   @unique
+  image        String?
+  departmentId String?  @db.Uuid
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  department         Department?        @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  complaints         Complaint[]        @relation("CitizenComplaints")
+  assignedComplaints Complaint[]        @relation("AssignedComplaints")
+  historyEntries     ComplaintHistory[]
+
+  @@index([departmentId])
+  @@map("users")
+}
+
+model Department {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @unique
+  code      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  users      User[]
+  complaints Complaint[]
+
+  @@map("departments")
+}
+
+model Complaint {
+  id               String             @id @default(uuid()) @db.Uuid
+  publicRef        String             @unique @db.VarChar(32)
+  citizenId        String             @db.Uuid
+  departmentId     String?            @db.Uuid
+  assignedWorkerId String?            @db.Uuid
+  category         ComplaintCategory?
+  aiCategory       ComplaintCategory?
+  aiDescription    String?
+  description      String
+  locationLabel    String?            @db.VarChar(500)
+  latitude         Decimal            @db.Decimal(9, 6)
+  longitude        Decimal            @db.Decimal(9, 6)
+  imageUrl         String
+  status           ComplaintStatus    @default(SUBMITTED)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  citizen        User               @relation("CitizenComplaints", fields: [citizenId], references: [id], onDelete: Restrict)
+  department     Department?        @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  assignedWorker User?              @relation("AssignedComplaints", fields: [assignedWorkerId], references: [id], onDelete: SetNull)
+  history        ComplaintHistory[]
+
+  @@index([departmentId, status])
+  @@index([assignedWorkerId])
+  @@index([citizenId])
+  @@index([createdAt])
+  @@map("complaints")
+}
+
+model ComplaintHistory {
+  id          String           @id @default(uuid()) @db.Uuid
+  complaintId String           @db.Uuid
+  actorId     String?          @db.Uuid
+  action      String           @db.VarChar(32)
+  oldStatus   ComplaintStatus?
+  newStatus   ComplaintStatus
+  metadata    String?
+  createdAt   DateTime         @default(now())
+
+  complaint Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  actor     User?     @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([complaintId, createdAt])
+  @@map("complaint_history")
+}
+

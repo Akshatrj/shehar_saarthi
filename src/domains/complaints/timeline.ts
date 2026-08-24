@@ -15,28 +15,30 @@ export type CitizenTimelineItem = {
 type HistoryEntry = {
   id: string;
   action: string;
-  fromStatus: string | null;
-  toStatus: string;
-  note: string | null;
+  oldStatus: string | null;
+  newStatus: string;
+  metadata: string | null;
   createdAt: string;
 };
 
-function parseRoutingNote(note: string | null): CategoryRoutingMetadata | null {
-  if (!note) {
+function parseRoutingMetadata(
+  metadata: string | null,
+): CategoryRoutingMetadata | null {
+  if (!metadata) {
     return null;
   }
   try {
-    return JSON.parse(note) as CategoryRoutingMetadata;
+    return JSON.parse(metadata) as CategoryRoutingMetadata;
   } catch {
     return null;
   }
 }
 
-function departmentLabel(slug: string | undefined) {
-  if (!slug) {
+function departmentLabel(code: string | undefined) {
+  if (!code) {
     return null;
   }
-  return DEPARTMENT_NAMES[slug as DepartmentSlug] ?? slug;
+  return DEPARTMENT_NAMES[code as DepartmentSlug] ?? code;
 }
 
 function categoryLabel(category: string | undefined) {
@@ -79,7 +81,7 @@ export function buildCitizenTimeline(input: {
       entry.action === "CATEGORY_CONFIRMED" ||
       entry.action === "CATEGORY_CHANGED"
     ) {
-      const routing = parseRoutingNote(entry.note);
+      const routing = parseRoutingMetadata(entry.metadata);
       items.push({
         id: `${entry.id}-category`,
         label:
@@ -90,20 +92,24 @@ export function buildCitizenTimeline(input: {
         createdAt: entry.createdAt,
       });
 
-      if (entry.toStatus === "ROUTED") {
+      if (entry.newStatus === "ROUTED") {
+        const deptCode = routing?.departmentCode;
         items.push({
           id: `${entry.id}-routed`,
-          label: `Routed to ${departmentLabel(routing?.departmentSlug) ?? "department"}`,
+          label: `Routed to ${departmentLabel(deptCode) ?? "department"}`,
           createdAt: entry.createdAt,
         });
       }
       continue;
     }
 
-    if (entry.action === "ASSIGNED_TO_SELF") {
+    if (
+      entry.action === "ASSIGNED_TO_SELF" ||
+      entry.action === "ASSIGNED_TO_WORKER"
+    ) {
       items.push({
         id: entry.id,
-        label: "Assigned to staff",
+        label: "Assigned to worker",
         createdAt: entry.createdAt,
       });
       continue;
@@ -122,6 +128,15 @@ export function buildCitizenTimeline(input: {
       items.push({
         id: entry.id,
         label: "Completed",
+        createdAt: entry.createdAt,
+      });
+      continue;
+    }
+
+    if (entry.action === "CLOSED") {
+      items.push({
+        id: entry.id,
+        label: "Closed",
         createdAt: entry.createdAt,
       });
       continue;

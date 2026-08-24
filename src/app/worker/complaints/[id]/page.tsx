@@ -1,8 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ComplaintHistoryList } from "@/components/staff/ComplaintHistoryList";
-import { StaffComplaintActions } from "@/components/staff/StaffComplaintActions";
+import { ComplaintHistoryList } from "@/components/complaints/ComplaintHistoryList";
+import { WorkerComplaintActions } from "@/components/worker/WorkerComplaintActions";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -12,10 +12,10 @@ import {
   type ComplaintStatus,
 } from "@/domains/complaints/types";
 import {
-  getStaffComplaintDetail,
-  requireStaffContext,
-} from "@/domains/complaints/staff-service";
-import { requireStaff } from "@/lib/auth/require";
+  getWorkerComplaintDetail,
+  requireWorkerContext,
+} from "@/domains/complaints/worker-service";
+import { requireWorker } from "@/lib/auth/require";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -28,21 +28,18 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
-export default async function StaffComplaintDetailPage({ params }: PageProps) {
-  const user = await requireStaff();
+export default async function WorkerComplaintDetailPage({ params }: PageProps) {
+  const user = await requireWorker();
   const { id } = await params;
 
-  let staffContext;
+  let workerContext;
   try {
-    staffContext = requireStaffContext(user);
+    workerContext = requireWorkerContext(user);
   } catch {
     notFound();
   }
 
-  const complaint = await getStaffComplaintDetail(
-    staffContext.departmentId,
-    id,
-  );
+  const complaint = await getWorkerComplaintDetail(workerContext, id);
 
   if (!complaint) {
     notFound();
@@ -55,10 +52,7 @@ export default async function StaffComplaintDetailPage({ params }: PageProps) {
         title={complaint.publicRef}
         description={`Submitted ${formatDate(complaint.createdAt)}`}
         actions={
-          <Link
-            href="/staff"
-            className="text-small font-medium text-brand hover:text-brand-dark"
-          >
+          <Link href="/worker" className="text-small font-medium text-brand">
             Back to desk
           </Link>
         }
@@ -80,12 +74,9 @@ export default async function StaffComplaintDetailPage({ params }: PageProps) {
 
         <div className="flex flex-col gap-4">
           <Card className="p-5">
-            <div className="flex flex-wrap items-center gap-2">
-              <StatusBadge status={complaint.status as ComplaintStatus} />
-            </div>
+            <StatusBadge status={complaint.status as ComplaintStatus} />
             <h2 className="mt-3 text-h3 text-navy">Description</h2>
             <p className="mt-2 text-body text-ink">{complaint.description}</p>
-
             <h2 className="mt-4 text-h3 text-navy">Location</h2>
             <p className="mt-2 text-body text-ink">
               {complaint.locationLabel ?? "Coordinates recorded"}
@@ -93,45 +84,32 @@ export default async function StaffComplaintDetailPage({ params }: PageProps) {
             <p className="mt-1 font-mono text-small text-muted">
               {complaint.latitude}, {complaint.longitude}
             </p>
-
             <h2 className="mt-4 text-h3 text-navy">Category</h2>
             <p className="mt-2 text-body text-ink">
               {complaint.category
                 ? COMPLAINT_CATEGORY_LABELS[complaint.category as ComplaintCategory]
                 : "Not set"}
             </p>
-
             {complaint.aiCategory ? (
               <>
                 <h2 className="mt-4 text-h3 text-navy">AI suggestion</h2>
                 <p className="mt-2 text-body text-ink">
                   {COMPLAINT_CATEGORY_LABELS[complaint.aiCategory as ComplaintCategory]}
                 </p>
-                {complaint.aiDescription ? (
-                  <p className="mt-1 text-small text-muted">
-                    &ldquo;{complaint.aiDescription}&rdquo;
-                  </p>
-                ) : null}
               </>
             ) : null}
-
             <h2 className="mt-4 text-h3 text-navy">Department</h2>
             <p className="mt-2 text-body text-ink">{complaint.department.name}</p>
-
-            <h2 className="mt-4 text-h3 text-navy">Assigned worker</h2>
-            <p className="mt-2 text-body text-ink">
-              {complaint.assignedWorker?.name ?? "Unassigned"}
-            </p>
           </Card>
 
           <Card className="p-5">
             <h2 className="text-h3 text-navy">Actions</h2>
             <div className="mt-4">
-              <StaffComplaintActions
+              <WorkerComplaintActions
                 complaintId={complaint.id}
                 status={complaint.status}
-                assignedWorkerId={complaint.assignedWorker?.id ?? null}
-                currentStaffId={staffContext.staffId}
+                assignedWorkerId={complaint.assignedWorkerId}
+                currentWorkerId={workerContext.workerId}
               />
             </div>
           </Card>

@@ -9,14 +9,14 @@ import {
   listCitizenComplaintsPage,
   parseCitizenPage,
 } from "@/domains/complaints/citizen-tracking";
-import { requireCitizenPortal } from "@/lib/auth/require";
+import { requireCitizen } from "@/lib/auth/require";
 
 type PageProps = {
   searchParams: Promise<{ page?: string }>;
 };
 
 export default async function CitizenHomePage({ searchParams }: PageProps) {
-  const user = await requireCitizenPortal();
+  const user = await requireCitizen();
   const params = await searchParams;
   const page = parseCitizenPage(params.page);
 

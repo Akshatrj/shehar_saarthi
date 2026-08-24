@@ -3,7 +3,8 @@ import { authConfig } from "@/lib/auth.config";
 import {
   canAccessAdminPortal,
   canAccessCitizenPortal,
-  canAccessStaffPortal,
+  canAccessDepartmentAdminPortal,
+  canAccessWorkerPortal,
   portalPathForRole,
 } from "@/lib/rbac";
 import type { UserRole } from "@/domains/auth/types";
@@ -33,7 +34,17 @@ export default auth((request) => {
     );
   }
 
-  if (pathname.startsWith("/staff") && role && !canAccessStaffPortal(role)) {
+  if (pathname.startsWith("/worker") && role && !canAccessWorkerPortal(role)) {
+    return Response.redirect(
+      new URL(portalPathForRole(role), request.nextUrl.origin),
+    );
+  }
+
+  if (
+    pathname.startsWith("/department-admin") &&
+    role &&
+    !canAccessDepartmentAdminPortal(role)
+  ) {
     return Response.redirect(
       new URL(portalPathForRole(role), request.nextUrl.origin),
     );
@@ -44,8 +55,19 @@ export default auth((request) => {
       new URL(portalPathForRole(role), request.nextUrl.origin),
     );
   }
+
+  if (pathname.startsWith("/staff")) {
+    const target = pathname.replace(/^\/staff/, "/worker");
+    return Response.redirect(new URL(target, request.nextUrl.origin));
+  }
 });
 
 export const config = {
-  matcher: ["/citizen/:path*", "/staff/:path*", "/admin/:path*"],
+  matcher: [
+    "/citizen/:path*",
+    "/worker/:path*",
+    "/department-admin/:path*",
+    "/admin/:path*",
+    "/staff/:path*",
+  ],
 };

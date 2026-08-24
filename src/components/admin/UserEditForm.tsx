@@ -12,7 +12,7 @@ import { roleLabel } from "@/lib/rbac";
 
 type UserEditFormProps = {
   user: AdminUserRow;
-  departments: Array<{ id: string; name: string; slug: string }>;
+  departments: Array<{ id: string; name: string; code: string }>;
 };
 
 const roleOptions = USER_ROLES.map((role) => ({
@@ -61,7 +61,7 @@ export function UserEditForm({ user, departments }: UserEditFormProps) {
         options={roleOptions}
         onChange={(event) => setRole(event.target.value as UserRole)}
       />
-      {role === "STAFF" ? (
+      {role === "WORKER" || role === "DEPARTMENT_ADMIN" ? (
         <Select
           label="Department"
           value={departmentId}

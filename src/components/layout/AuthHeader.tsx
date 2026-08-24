@@ -6,7 +6,8 @@ import type { UserRole } from "@/domains/auth/types";
 import {
   canAccessAdminPortal,
   canAccessCitizenPortal,
-  canAccessStaffPortal,
+  canAccessDepartmentAdminPortal,
+  canAccessWorkerPortal,
   roleLabel,
 } from "@/lib/rbac";
 import { Button } from "@/components/ui/Button";
@@ -26,8 +27,11 @@ function portalLinksForRole(role: UserRole) {
     links.push({ href: "/citizen", label: "My complaints" });
     links.push({ href: "/citizen/report", label: "Report issue" });
   }
-  if (canAccessStaffPortal(role)) {
-    links.push({ href: "/staff", label: "Staff" });
+  if (canAccessWorkerPortal(role)) {
+    links.push({ href: "/worker", label: "Worker desk" });
+  }
+  if (canAccessDepartmentAdminPortal(role)) {
+    links.push({ href: "/department-admin", label: "Department admin" });
   }
   if (canAccessAdminPortal(role)) {
     links.push({ href: "/admin", label: "Admin" });

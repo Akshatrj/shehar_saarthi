@@ -53,7 +53,7 @@ export function Footer() {
               Super admin sign in
             </Link>
             <Link
-              href="/login?callbackUrl=/staff"
+              href="/login?callbackUrl=/worker"
               className="inline-flex min-h-11 items-center text-small text-brand-light underline-offset-2 hover:underline"
             >
               Staff sign in

@@ -64,8 +64,8 @@ export async function resolveDepartmentIdForRouting(input: {
   }
 
   const department = await prisma.department.findFirst({
-    where: { slug, isActive: true },
-    select: { id: true, name: true, slug: true },
+    where: { code: slug, isActive: true },
+    select: { id: true, name: true, code: true },
   });
 
   if (!department) {

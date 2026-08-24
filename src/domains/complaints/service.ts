@@ -70,7 +70,7 @@ export async function createCitizenComplaint(
     longitude: unknown;
   },
 ) {
-  if (actor.role !== "CITIZEN" && actor.role !== "SUPER_ADMIN") {
+  if (actor.role !== "CITIZEN") {
     throw new ComplaintServiceError(
       "Only citizens can submit complaints from this endpoint.",
       403,
@@ -125,8 +125,8 @@ export async function createCitizenComplaint(
         complaintId: created.id,
         actorId: actor.id,
         action: "SUBMITTED",
-        fromStatus: null,
-        toStatus: "SUBMITTED",
+        oldStatus: null,
+        newStatus: "SUBMITTED",
       },
     });
 

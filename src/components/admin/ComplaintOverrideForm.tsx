@@ -23,7 +23,7 @@ export function ComplaintOverrideForm({
   departments,
 }: {
   complaint: AdminComplaintDetail;
-  departments: Array<{ id: string; name: string; slug: string }>;
+  departments: Array<{ id: string; name: string; code: string }>;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();

@@ -3,13 +3,13 @@ import { COMPLAINT_STATUSES, COMPLAINT_STATUS_LABELS } from "@/domains/complaint
 import { cn } from "@/lib/cn";
 import { controlClassName } from "@/components/ui/Field";
 
-type StaffComplaintFiltersProps = {
+type WorkerComplaintFiltersProps = {
   currentStatus?: string;
 };
 
-export function StaffComplaintFilters({
+export function WorkerComplaintFilters({
   currentStatus,
-}: StaffComplaintFiltersProps) {
+}: WorkerComplaintFiltersProps) {
   return (
     <form className="flex flex-wrap items-end gap-3" method="get">
       <div className="flex min-w-[12rem] flex-col gap-1">
@@ -37,7 +37,7 @@ export function StaffComplaintFilters({
         Apply filter
       </button>
       {currentStatus ? (
-        <Link href="/staff" className="text-small font-medium text-brand">
+        <Link href="/worker" className="text-small font-medium text-brand">
           Clear
         </Link>
       ) : null}

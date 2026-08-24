@@ -2,9 +2,11 @@ import Link from "next/link";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { requireSuperAdmin } from "@/lib/auth/require";
+import { getAdminDashboardStats } from "@/domains/admin/users";
 
 export default async function AdminHomePage() {
   const user = await requireSuperAdmin();
+  const stats = await getAdminDashboardStats(user);
 
   return (
     <div className="flex flex-col gap-6">
@@ -19,6 +21,42 @@ export default async function AdminHomePage() {
           Role: {user.role} · Full platform access
         </CardDescription>
       </Card>
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <Card className="p-4">
+          <p className="text-small text-muted">Users</p>
+          <p className="mt-1 text-h2 text-navy">{stats.totalUsers}</p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-small text-muted">Citizens</p>
+          <p className="mt-1 text-h2 text-navy">{stats.citizens}</p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-small text-muted">Workers</p>
+          <p className="mt-1 text-h2 text-navy">{stats.workers}</p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-small text-muted">Dept admins</p>
+          <p className="mt-1 text-h2 text-navy">{stats.departmentAdmins}</p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-small text-muted">Departments</p>
+          <p className="mt-1 text-h2 text-navy">{stats.departments}</p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-small text-muted">Complaints</p>
+          <p className="mt-1 text-h2 text-navy">{stats.totalComplaints}</p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-small text-muted">Open</p>
+          <p className="mt-1 text-h2 text-navy">{stats.openComplaints}</p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-small text-muted">Completed/closed</p>
+          <p className="mt-1 text-h2 text-navy">{stats.completedComplaints}</p>
+        </Card>
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-3">
         <Card className="p-5">
           <CardTitle>Users</CardTitle>

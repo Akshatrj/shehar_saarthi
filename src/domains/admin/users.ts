@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import type { AuthUser } from "@/lib/rbac";
+import { validateRoleDepartmentRules } from "@/lib/rbac";
 import { USER_ROLES, type UserRole } from "@/domains/auth/types";
 import { AdminError, ADMIN_PAGE_SIZE, assertSuperAdmin } from "@/domains/admin/auth";
 
@@ -18,6 +19,9 @@ function parseRole(value: unknown): UserRole {
     throw new AdminError("Please choose a valid role.");
   }
   const normalized = value.trim().toUpperCase();
+  if (normalized === "STAFF") {
+    return "WORKER";
+  }
   if (!USER_ROLES.includes(normalized as UserRole)) {
     throw new AdminError("Please choose a valid role.");
   }
@@ -40,7 +44,7 @@ export async function listAdminUsers(actor: AuthUser, page = 1) {
       isActive: true,
       createdAt: true,
       department: {
-        select: { id: true, name: true, slug: true },
+        select: { id: true, name: true, code: true },
       },
     },
   });
@@ -54,13 +58,7 @@ export async function listAdminUsers(actor: AuthUser, page = 1) {
       name: row.name,
       email: row.email,
       role: row.role,
-      department: row.department
-        ? {
-            id: row.department.id,
-            name: row.department.name,
-            code: row.department.slug,
-          }
-        : null,
+      department: row.department,
       isActive: row.isActive,
       createdAt: row.createdAt.toISOString(),
     })),
@@ -80,6 +78,10 @@ export async function updateAdminUser(
 ) {
   assertSuperAdmin(actor);
 
+  if (userId === actor.id) {
+    throw new AdminError("You cannot change your own role or account here.");
+  }
+
   const role = parseRole(input.role);
   const isActive =
     input.isActive === true ||
@@ -87,9 +89,9 @@ export async function updateAdminUser(
     input.isActive === "on";
 
   let departmentId: string | null = null;
-  if (role === "STAFF") {
+  if (role === "WORKER" || role === "DEPARTMENT_ADMIN") {
     if (typeof input.departmentId !== "string" || !input.departmentId.trim()) {
-      throw new AdminError("Staff users must be linked to a department.");
+      throw new AdminError("Workers and department admins must be linked to a department.");
     }
     const department = await prisma.department.findFirst({
       where: { id: input.departmentId.trim(), isActive: true },
@@ -99,6 +101,11 @@ export async function updateAdminUser(
       throw new AdminError("Please choose an active department.");
     }
     departmentId = department.id;
+  }
+
+  const ruleError = validateRoleDepartmentRules(role, departmentId);
+  if (ruleError) {
+    throw new AdminError(ruleError);
   }
 
   const existing = await prisma.user.findUnique({
@@ -129,4 +136,43 @@ export async function assertAdminAccessDenied(actor: AuthUser) {
     }
     throw error;
   }
+}
+
+export async function getAdminDashboardStats(actor: AuthUser) {
+  assertSuperAdmin(actor);
+
+  const [
+    totalUsers,
+    citizens,
+    workers,
+    departmentAdmins,
+    departments,
+    totalComplaints,
+    openComplaints,
+    completedComplaints,
+  ] = await Promise.all([
+    prisma.user.count(),
+    prisma.user.count({ where: { role: "CITIZEN" } }),
+    prisma.user.count({ where: { role: "WORKER" } }),
+    prisma.user.count({ where: { role: "DEPARTMENT_ADMIN" } }),
+    prisma.department.count({ where: { isActive: true } }),
+    prisma.complaint.count(),
+    prisma.complaint.count({
+      where: { status: { notIn: ["COMPLETED", "CLOSED"] } },
+    }),
+    prisma.complaint.count({
+      where: { status: { in: ["COMPLETED", "CLOSED"] } },
+    }),
+  ]);
+
+  return {
+    totalUsers,
+    citizens,
+    workers,
+    departmentAdmins,
+    departments,
+    totalComplaints,
+    openComplaints,
+    completedComplaints,
+  };
 }

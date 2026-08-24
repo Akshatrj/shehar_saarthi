@@ -4,7 +4,8 @@ import type { AuthUser } from "@/lib/rbac";
 import {
   canAccessAdminPortal,
   canAccessCitizenPortal,
-  canAccessStaffPortal,
+  canAccessDepartmentAdminPortal,
+  canAccessWorkerPortal,
   portalPathForRole,
 } from "@/lib/rbac";
 import type { UserRole } from "@/domains/auth/types";
@@ -59,9 +60,25 @@ export async function requireRole(...roles: UserRole[]): Promise<AuthUser> {
   return user;
 }
 
-export async function requireStaff(): Promise<AuthUser> {
+export async function requireCitizen(): Promise<AuthUser> {
   const user = await requireAuth();
-  if (!canAccessStaffPortal(user.role)) {
+  if (!canAccessCitizenPortal(user.role)) {
+    redirect(portalPathForRole(user.role));
+  }
+  return user;
+}
+
+export async function requireWorker(): Promise<AuthUser> {
+  const user = await requireAuth();
+  if (!canAccessWorkerPortal(user.role)) {
+    redirect(portalPathForRole(user.role));
+  }
+  return user;
+}
+
+export async function requireDepartmentAdmin(): Promise<AuthUser> {
+  const user = await requireAuth();
+  if (!canAccessDepartmentAdminPortal(user.role)) {
     redirect(portalPathForRole(user.role));
   }
   return user;
@@ -75,12 +92,9 @@ export async function requireSuperAdmin(): Promise<AuthUser> {
   return user;
 }
 
+/** @deprecated use requireCitizen */
 export async function requireCitizenPortal(): Promise<AuthUser> {
-  const user = await requireAuth();
-  if (!canAccessCitizenPortal(user.role)) {
-    redirect(portalPathForRole(user.role));
-  }
-  return user;
+  return requireCitizen();
 }
 
 export async function requireAuthApi(): Promise<
@@ -118,26 +132,7 @@ export async function requireRoleApi(
   return gate;
 }
 
-export async function requireStaffApi(): Promise<
-  { user: AuthUser } | { response: Response }
-> {
-  const gate = await requireAuthApi();
-  if ("response" in gate) {
-    return gate;
-  }
-  if (!canAccessStaffPortal(gate.user.role)) {
-    return {
-      response: jsonError(
-        API_ERROR_CODES.FORBIDDEN,
-        "Staff access is required.",
-        403,
-      ),
-    };
-  }
-  return gate;
-}
-
-export async function requireCitizenPortalApi(): Promise<
+export async function requireCitizenApi(): Promise<
   { user: AuthUser } | { response: Response }
 > {
   const gate = await requireAuthApi();
@@ -154,6 +149,13 @@ export async function requireCitizenPortalApi(): Promise<
     };
   }
   return gate;
+}
+
+/** @deprecated use requireCitizenApi */
+export async function requireCitizenPortalApi(): Promise<
+  { user: AuthUser } | { response: Response }
+> {
+  return requireCitizenApi();
 }
 
 export async function requireSuperAdminApi(): Promise<

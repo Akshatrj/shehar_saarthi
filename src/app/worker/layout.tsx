@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
 import { AuthenticatedShell } from "@/components/layout/AuthenticatedShell";
-import { requireStaff } from "@/lib/auth/require";
+import { requireWorker } from "@/lib/auth/require";
 
 export const metadata: Metadata = {
-  title: "Staff portal",
+  title: "Worker portal",
 };
 
-export default async function StaffLayout({
+export default async function WorkerLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const user = await requireStaff();
+  const user = await requireWorker();
 
   return (
     <AuthenticatedShell

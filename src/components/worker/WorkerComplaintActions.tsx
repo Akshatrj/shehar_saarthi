@@ -8,26 +8,26 @@ import {
   assignToSelf,
   markCompleted,
   startProgress,
-} from "@/app/staff/actions";
+} from "@/app/worker/actions";
 
-type StaffComplaintActionsProps = {
+type WorkerComplaintActionsProps = {
   complaintId: string;
   status: string;
   assignedWorkerId: string | null;
-  currentStaffId: string;
+  currentWorkerId: string;
 };
 
-export function StaffComplaintActions({
+export function WorkerComplaintActions({
   complaintId,
   status,
   assignedWorkerId,
-  currentStaffId,
-}: StaffComplaintActionsProps) {
+  currentWorkerId,
+}: WorkerComplaintActionsProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  const isAssignedWorker = assignedWorkerId === currentStaffId;
+  const isAssignedWorker = assignedWorkerId === currentWorkerId;
 
   async function runAction(
     action: (id: string) => Promise<{ ok: boolean; error?: string }>,
