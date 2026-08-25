@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import type { AuthUser } from "@/lib/rbac";
-import type { ComplaintStatus, ComplaintCategory } from "@/domains/complaints/types";
+import type { ComplaintStatus } from "@/domains/complaints/types";
 import type { CitizenComplaintSummary } from "@/domains/complaints/constants";
 import { uploadComplaintImage } from "@/domains/storage/blob";
 import {
@@ -180,28 +180,20 @@ export async function getCitizenComplaintByImageUrl(
       status: true,
       category: true,
       imageUrl: true,
-    },
-  });
-}
-
-export async function saveComplaintAiSuggestion(
-  citizenId: string,
-  complaintId: string,
-  input: { aiCategory: ComplaintCategory; aiDescription: string },
-) {
-  const owned = await prisma.complaint.findFirst({
-    where: { id: complaintId, citizenId },
-    select: { id: true },
-  });
-  if (!owned) {
-    throw new ComplaintServiceError("Complaint not found.", 404, "NOT_FOUND");
-  }
-
-  await prisma.complaint.update({
-    where: { id: complaintId },
-    data: {
-      aiCategory: input.aiCategory,
-      aiDescription: input.aiDescription,
+      description: true,
+      latitude: true,
+      longitude: true,
+      locationLabel: true,
+      aiRequestId: true,
+      aiCategory: true,
+      aiDescription: true,
+      aiCategoryConfidence: true,
+      evidenceConsistency: true,
+      evidenceConfidence: true,
+      aiPriority: true,
+      priorityScore: true,
+      civicImpactScore: true,
+      requiresManualReview: true,
     },
   });
 }

@@ -213,7 +213,8 @@ export function CategoryConfirmationPanel({
 
       {!complaint.aiCategory && mode === "review" ? (
         <p className="text-small text-muted">
-          No AI suggestion is available yet. Use Change to choose a category manually.
+          Analyzing your complaint… If suggestions are unavailable, please select a
+          category manually.
         </p>
       ) : null}
     </div>

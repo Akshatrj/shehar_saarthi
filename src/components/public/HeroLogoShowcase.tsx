@@ -1,4 +1,7 @@
-import Image from "next/image";
+"use client";
+
+import { PointerEvent, useRef } from "react";
+import { LivingBrandMark } from "@/components/public/LivingBrandMark";
 import { cn } from "@/lib/cn";
 
 type HeroLogoShowcaseProps = {
@@ -6,33 +9,48 @@ type HeroLogoShowcaseProps = {
 };
 
 export function HeroLogoShowcase({ className }: HeroLogoShowcaseProps) {
+  const stageRef = useRef<HTMLDivElement>(null);
+
+  const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const rect = stage.getBoundingClientRect();
+    const x = (event.clientX - rect.left) / rect.width - 0.5;
+    const y = (event.clientY - rect.top) / rect.height - 0.5;
+    stage.style.setProperty("--ss-tilt-x", `${(y * -14).toFixed(2)}deg`);
+    stage.style.setProperty("--ss-tilt-y", `${(x * 16).toFixed(2)}deg`);
+  };
+
+  const onPointerLeave = () => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    stage.style.setProperty("--ss-tilt-x", "0deg");
+    stage.style.setProperty("--ss-tilt-y", "0deg");
+  };
+
   return (
     <div
+      ref={stageRef}
       className={cn(
-        "relative mx-auto flex w-full max-w-[18rem] items-center justify-center sm:max-w-[20rem]",
+        "ss-living-stage relative mx-auto flex w-full max-w-[19rem] flex-col items-center sm:max-w-[22rem]",
         className,
       )}
       aria-hidden="true"
+      onPointerMove={onPointerMove}
+      onPointerLeave={onPointerLeave}
     >
-      <div className="ss-hero-logo-ambient absolute inset-0 scale-110 rounded-full blur-2xl" />
-
-      <div className="ss-hero-logo-ring absolute inset-[-12%] rounded-full border border-brand-light/20" />
-      <div className="ss-hero-logo-ring ss-hero-logo-ring--delay absolute inset-[-20%] rounded-full border border-orange/15" />
-
-      <div className="relative overflow-hidden rounded-2xl border border-white/15 bg-gradient-to-br from-white/[0.08] via-brand/10 to-orange/10 p-3 shadow-[0_24px_60px_rgb(10_25_47_/_0.45)] backdrop-blur-md sm:p-4">
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-brand-light/20 via-transparent to-orange/10" />
-        <div className="pointer-events-none absolute -left-8 -top-8 h-24 w-24 rounded-full bg-brand-light/25 blur-2xl" />
-        <div className="pointer-events-none absolute -bottom-6 -right-6 h-20 w-20 rounded-full bg-orange/20 blur-2xl" />
-        <div className="pointer-events-none absolute bottom-4 left-4 h-10 w-10 rounded-full bg-accent/20 blur-xl" />
-
-        <Image
-          src="/brand/shehar-saarthi-logo.png"
-          alt=""
-          width={320}
-          height={360}
-          className="relative z-10 h-auto w-full drop-shadow-[0_12px_32px_rgb(0_0_0_/_0.35)]"
-          priority
-        />
+      <div className="ss-hero-logo-ambient absolute inset-x-4 top-6 h-48 rounded-full blur-3xl" />
+      <div className="ss-living-card relative w-full">
+        <LivingBrandMark className="relative z-10 h-auto w-full drop-shadow-[0_18px_36px_rgb(10_25_47_/_0.45)]" />
+        <p className="ss-living-wordmark relative z-10 mt-1 text-center text-[1.65rem] font-bold uppercase leading-none tracking-[0.04em] sm:text-[1.9rem]">
+          Shehar <span>Saarthi</span>
+          <span className="text-orange">.</span>
+        </p>
+        <p className="ss-living-tagline relative z-10 mt-3 flex items-center justify-center gap-3 text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-white/90">
+          <span className="ss-living-rule h-px w-10" />
+          Civic Issue Portal
+          <span className="ss-living-rule h-px w-10" />
+        </p>
       </div>
     </div>
   );

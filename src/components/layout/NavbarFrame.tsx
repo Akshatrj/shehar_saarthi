@@ -1,11 +1,11 @@
 "use client";
 
-import { type ReactNode, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/cn";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 
 type NavbarFrameProps = {
-  children: ReactNode;
+  children: React.ReactNode;
   className?: string;
 };
 
@@ -14,7 +14,15 @@ export function NavbarFrame({ children, className }: NavbarFrameProps) {
   const prefersReducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 16);
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(() => {
+        setScrolled(window.scrollY > 16);
+        ticking = false;
+      });
+    };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);

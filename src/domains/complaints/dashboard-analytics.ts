@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import {
@@ -28,6 +29,7 @@ export type MapComplaintPin = {
   status: ComplaintStatus;
   category: ComplaintCategory | null;
   description: string;
+  departmentId: string | null;
   departmentName: string | null;
 };
 
@@ -129,12 +131,102 @@ async function resolveDistributionChart(
   };
 }
 
-export async function getDashboardAnalytics(scope: {
+export type DashboardAnalyticsScope = {
   departmentId?: string;
-}): Promise<DashboardAnalytics> {
-  const where: Prisma.ComplaintWhereInput = scope.departmentId
-    ? { departmentId: scope.departmentId }
-    : {};
+  assignedWorkerId?: string;
+  /** Map pins across all departments while charts stay scoped to departmentId. */
+  mapAllDepartments?: boolean;
+};
+
+function resolveAnalyticsWhere(
+  scope: DashboardAnalyticsScope,
+): Prisma.ComplaintWhereInput {
+  if (scope.assignedWorkerId) {
+    return { assignedWorkerId: scope.assignedWorkerId };
+  }
+  if (scope.departmentId) {
+    return { departmentId: scope.departmentId };
+  }
+  return {};
+}
+
+function resolveMapWhere(scope: DashboardAnalyticsScope): Prisma.ComplaintWhereInput {
+  if (scope.assignedWorkerId) {
+    return { assignedWorkerId: scope.assignedWorkerId };
+  }
+  if (scope.mapAllDepartments) {
+    return {};
+  }
+  return resolveAnalyticsWhere(scope);
+}
+
+const mapComplaintSelect = {
+  id: true,
+  publicRef: true,
+  latitude: true,
+  longitude: true,
+  status: true,
+  category: true,
+  description: true,
+  departmentId: true,
+  department: {
+    select: { name: true },
+  },
+} as const;
+
+function mapComplaintRows(
+  mapRows: Array<{
+    id: string;
+    publicRef: string;
+    latitude: unknown;
+    longitude: unknown;
+    status: ComplaintStatus;
+    category: ComplaintCategory | null;
+    description: string;
+    departmentId: string | null;
+    department: { name: string } | null;
+  }>,
+): MapComplaintPin[] {
+  return mapRows.map((complaint) => ({
+    id: complaint.id,
+    publicRef: complaint.publicRef,
+    latitude: Number(complaint.latitude),
+    longitude: Number(complaint.longitude),
+    status: complaint.status,
+    category: complaint.category,
+    description: truncateDescription(complaint.description),
+    departmentId: complaint.departmentId,
+    departmentName: complaint.department?.name ?? null,
+  }));
+}
+
+export async function getComplaintMapAnalytics(
+  where: Prisma.ComplaintWhereInput,
+): Promise<
+  Pick<DashboardAnalytics, "mapComplaints" | "mapTotalCount" | "mapTruncated">
+> {
+  const [totalComplaints, mapRows] = await Promise.all([
+    prisma.complaint.count({ where }),
+    prisma.complaint.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      take: DASHBOARD_MAP_PIN_LIMIT,
+      select: mapComplaintSelect,
+    }),
+  ]);
+
+  return {
+    mapComplaints: mapComplaintRows(mapRows),
+    mapTotalCount: totalComplaints,
+    mapTruncated: totalComplaints > mapRows.length,
+  };
+}
+
+async function loadDashboardAnalytics(
+  scope: DashboardAnalyticsScope,
+): Promise<DashboardAnalytics> {
+  const where = resolveAnalyticsWhere(scope);
+  const mapWhere = resolveMapWhere(scope);
 
   const trendWhere: Prisma.ComplaintWhereInput = {
     ...where,
@@ -143,30 +235,14 @@ export async function getDashboardAnalytics(scope: {
 
   const [
     totalComplaints,
-    mapRows,
+    mapData,
     statusGroups,
     categoryGroups,
     distributionGroups,
     recentComplaints,
   ] = await Promise.all([
     prisma.complaint.count({ where }),
-    prisma.complaint.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      take: DASHBOARD_MAP_PIN_LIMIT,
-      select: {
-        id: true,
-        publicRef: true,
-        latitude: true,
-        longitude: true,
-        status: true,
-        category: true,
-        description: true,
-        department: {
-          select: { name: true },
-        },
-      },
-    }),
+    getComplaintMapAnalytics(mapWhere),
     prisma.complaint.groupBy({
       by: ["status"],
       where,
@@ -230,18 +306,9 @@ export async function getDashboardAnalytics(scope: {
   const distribution = await resolveDistributionChart(scope, distributionGroups);
 
   return {
-    mapComplaints: mapRows.map((complaint) => ({
-      id: complaint.id,
-      publicRef: complaint.publicRef,
-      latitude: Number(complaint.latitude),
-      longitude: Number(complaint.longitude),
-      status: complaint.status,
-      category: complaint.category,
-      description: truncateDescription(complaint.description),
-      departmentName: complaint.department?.name ?? null,
-    })),
-    mapTotalCount: totalComplaints,
-    mapTruncated: totalComplaints > mapRows.length,
+    mapComplaints: mapData.mapComplaints,
+    mapTotalCount: mapData.mapTotalCount,
+    mapTruncated: mapData.mapTruncated,
     byStatus: statusChartData(statusCounts),
     byCategory: categoryChartData(categoryItems),
     distribution: distribution.data,
@@ -255,3 +322,5 @@ export async function getDashboardAnalytics(scope: {
     },
   };
 }
+
+export const getDashboardAnalytics = cache(loadDashboardAnalytics);

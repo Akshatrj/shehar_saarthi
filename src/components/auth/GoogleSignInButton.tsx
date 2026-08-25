@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { BrandLogo } from "@/components/layout/BrandLogo";
 import { signInWithGoogle } from "@/app/(public)/login/actions";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
@@ -72,13 +72,11 @@ export function GoogleSignInPanel({
     <div className="overflow-hidden rounded-2xl border border-line bg-paper-raised shadow-sm">
       <div className="border-b border-line bg-brand-50/70 px-6 py-5">
         <div className="flex items-center gap-4">
-          <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-line">
-            <Image
-              src="/brand/shehar-saarthi-logo.png"
-              alt=""
+          <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-navy p-1.5 shadow-sm ring-1 ring-line">
+            <BrandLogo
               width={56}
               height={56}
-              className="h-full w-full object-cover"
+              className="h-full w-full object-contain"
             />
           </div>
           <div className="min-w-0">

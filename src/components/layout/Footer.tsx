@@ -14,8 +14,8 @@ export function Footer() {
     <footer className="border-t border-navy-light bg-navy text-white">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 md:grid-cols-[1.1fr_1fr_1fr]">
         <div className="flex flex-col gap-4">
-          <Logo variant="lockup" href="/" />
-          <p className="max-w-sm text-small leading-relaxed text-navy-muted">
+          <Logo variant="lockup" href="/" surface="light" priority={false} />
+          <p className="max-w-sm text-small leading-relaxed text-white/75">
             A civic companion for reporting and resolving city issues. Field
             staff see the problem, not the person who reported it.
           </p>
@@ -41,7 +41,7 @@ export function Footer() {
           <p className="text-small font-semibold uppercase tracking-wider text-brand-light">
             Staff desks
           </p>
-          <p className="mt-4 text-small leading-relaxed text-navy-muted">
+          <p className="mt-4 text-small leading-relaxed text-white/75">
             This site is not an emergency service. For fire, crime, or medical
             help, use the numbers published by local authorities.
           </p>
@@ -62,7 +62,7 @@ export function Footer() {
         </div>
       </div>
       <div className="border-t border-white/10">
-        <p className="mx-auto max-w-6xl px-4 py-4 text-center text-xs text-navy-muted">
+        <p className="mx-auto max-w-6xl px-4 py-4 text-center text-xs text-white/60">
           © {new Date().getFullYear()} Shehar Saarthi · Civic Issue Portal
         </p>
       </div>

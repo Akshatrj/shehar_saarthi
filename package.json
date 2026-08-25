@@ -4,11 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "prisma generate && next build",
+    "build": "node scripts/prisma-generate-safe.mjs && next build",
     "start": "next start",
     "lint": "eslint .",
     "postinstall": "prisma generate",
-    "db:generate": "prisma generate",
+    "db:generate": "node scripts/prisma-generate-safe.mjs",
     "db:validate": "prisma validate",
     "db:migrate": "tsx scripts/with-direct-db.ts prisma migrate deploy",
     "db:seed": "tsx scripts/with-direct-db.ts prisma db seed",
@@ -16,13 +16,14 @@
     "verify:secrets": "node scripts/verify-no-secrets.mjs",
     "test:phase3": "tsx scripts/test-phase3-complaints.ts",
     "test:phase4": "tsx scripts/test-phase4-classify.ts",
+    "test:gemini": "tsx scripts/test-gemini-ai.ts && tsx scripts/test-classify-cache.ts",
     "test:phase5": "tsx scripts/test-phase5-category.ts",
     "test:phase6": "tsx scripts/test-phase6-staff.ts",
     "test:phase7": "tsx scripts/test-phase7-dept-admin.ts",
     "test:phase7-citizen": "tsx scripts/test-phase7-citizen.ts",
     "test:phase8": "tsx scripts/test-phase8-admin.ts",
     "test:phase9": "tsx scripts/test-phase9-transitions.ts",
-    "test:all": "npm run test:phase3 && npm run test:phase4 && npm run test:phase5 && npm run test:phase6 && npm run test:phase7 && npm run test:phase7-citizen && npm run test:phase8 && npm run test:phase9"
+    "test:all": "npm run test:phase3 && npm run test:phase4 && npm run test:gemini && npm run test:phase5 && npm run test:phase6 && npm run test:phase7 && npm run test:phase7-citizen && npm run test:phase8 && npm run test:phase9"
   },
   "dependencies": {
     "@prisma/client": "^6.13.0",
@@ -36,6 +37,7 @@
     "next-auth": "5.0.0-beta.30",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "sharp": "^0.35.3",
     "tailwind-merge": "^3.3.1",
     "zod": "^3.25.76"
   },

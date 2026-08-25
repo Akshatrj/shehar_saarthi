@@ -3,7 +3,7 @@ import { ButtonLink } from "@/components/ui/Button";
 import { PaginationNav } from "@/components/ui/PaginationNav";
 import { Card } from "@/components/ui/Card";
 import { CitizenStatsGrid } from "@/components/citizen/CitizenStatsGrid";
-import { ComplaintList } from "@/components/citizen/ComplaintList";
+import { ComplaintListWithSearch } from "@/components/citizen/ComplaintListWithSearch";
 import {
   getCitizenComplaintStats,
   listCitizenComplaintsPage,
@@ -25,14 +25,16 @@ export default async function CitizenHomePage({ searchParams }: PageProps) {
     listCitizenComplaintsPage(user, page),
   ]);
 
+  const displayName = user.name?.split(" ")[0] ?? "there";
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow="Citizen"
-        title="My complaints"
-        description={`Signed in as ${user.name ?? user.email}. Track reports you have filed.`}
+        eyebrow="Citizen dashboard"
+        title={`Welcome back, ${displayName}`}
+        description="Track the complaints you have filed and follow their progress."
         actions={
-          <ButtonLink href="/citizen/report" size="sm">
+          <ButtonLink href="/citizen/report" size="sm" className="ss-btn-civic">
             Report an issue
           </ButtonLink>
         }
@@ -42,12 +44,12 @@ export default async function CitizenHomePage({ searchParams }: PageProps) {
 
       <Card className="flex flex-col gap-4 p-5">
         <div>
-          <h2 className="text-h3 text-navy">Your reports</h2>
+          <h2 className="text-h3 text-navy">Recent complaints</h2>
           <p className="mt-1 text-small text-muted">
-            Open a complaint card to view details and track progress.
+            Search by ID or description, then open a complaint to view its timeline.
           </p>
         </div>
-        <ComplaintList complaints={list.complaints} />
+        <ComplaintListWithSearch complaints={list.complaints} />
         <PaginationNav page={list.page} hasMore={list.hasMore} basePath="/citizen" />
       </Card>
     </div>

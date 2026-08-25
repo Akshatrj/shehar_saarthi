@@ -10,6 +10,7 @@ type ComplaintsMapSectionProps = {
   description: string;
   complaints: MapComplaintPin[];
   detailPathPrefix: string;
+  linkableDepartmentId?: string;
   mapTotalCount: number;
   mapTruncated: boolean;
 };
@@ -19,6 +20,7 @@ export function ComplaintsMapSection({
   description,
   complaints,
   detailPathPrefix,
+  linkableDepartmentId,
   mapTotalCount,
   mapTruncated,
 }: ComplaintsMapSectionProps) {
@@ -31,6 +33,7 @@ export function ComplaintsMapSection({
       <LazyComplaintsMap
         complaints={complaints}
         detailPathPrefix={detailPathPrefix}
+        linkableDepartmentId={linkableDepartmentId}
         mapTotalCount={mapTotalCount}
         mapTruncated={mapTruncated}
       />

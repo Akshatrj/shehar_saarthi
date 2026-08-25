@@ -10,11 +10,11 @@ export const COMPLAINT_STATUSES = [
 export type ComplaintStatus = (typeof COMPLAINT_STATUSES)[number];
 
 export const COMPLAINT_STATUS_LABELS: Record<ComplaintStatus, string> = {
-  SUBMITTED: "Submitted",
-  ROUTED: "Routed",
+  SUBMITTED: "Received",
+  ROUTED: "With department",
   ASSIGNED: "Assigned",
-  IN_PROGRESS: "In Progress",
-  COMPLETED: "Completed",
+  IN_PROGRESS: "In progress",
+  COMPLETED: "Work completed",
   CLOSED: "Closed",
 };
 

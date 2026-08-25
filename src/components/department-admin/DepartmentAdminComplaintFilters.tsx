@@ -11,7 +11,7 @@ export function DepartmentAdminComplaintFilters({
   return (
     <form className="flex flex-wrap items-end gap-3" method="get">
       <div className="flex min-w-[12rem] flex-col gap-1">
-        <label htmlFor="status" className="text-label font-medium text-green-950">
+        <label htmlFor="status" className="text-label font-medium text-navy">
           Status
         </label>
         <select

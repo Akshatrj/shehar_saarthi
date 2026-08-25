@@ -8,10 +8,13 @@ import {
   canAccessCitizenPortal,
   canAccessDepartmentAdminPortal,
   canAccessWorkerPortal,
+  portalPathForRole,
   roleLabel,
 } from "@/lib/rbac";
 import { Button } from "@/components/ui/Button";
 import { Logo } from "@/components/layout/Logo";
+import { NavbarFrame } from "@/components/layout/NavbarFrame";
+import { NavLinks } from "@/components/layout/NavLinks";
 
 type AuthHeaderProps = {
   user: {
@@ -39,29 +42,29 @@ function portalLinksForRole(role: UserRole) {
   return links;
 }
 
+const citizenNavItems = [
+  { href: "/citizen", label: "My complaints" },
+  { href: "/citizen/report", label: "Report issue" },
+];
+
 export function AuthHeader({ user }: AuthHeaderProps) {
   const links = portalLinksForRole(user.role);
+  const navItems = canAccessCitizenPortal(user.role) ? citizenNavItems : links;
 
   return (
-    <header className="border-b border-line bg-paper-raised">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-3">
-        <Logo compact />
+    <NavbarFrame>
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-2.5">
+        <Logo compact href={portalPathForRole(user.role)} />
         <nav
           aria-label="Portals"
-          className="flex flex-1 flex-wrap items-center gap-1"
+          className="hidden min-w-0 flex-1 justify-center lg:flex"
         >
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="inline-flex min-h-11 items-center rounded-md px-3 text-small font-medium text-muted hover:bg-brand-50 hover:text-brand"
-            >
-              {link.label}
-            </Link>
-          ))}
+          <div className="flex items-center gap-1">
+            <NavLinks items={navItems} />
+          </div>
         </nav>
-        <div className="flex items-center gap-3">
-          <div className="text-right text-small leading-tight">
+        <div className="ml-auto flex items-center gap-3">
+          <div className="hidden text-right text-small leading-tight sm:block">
             <p className="font-medium text-navy">{user.name ?? user.email}</p>
             <p className="text-muted">{roleLabel(user.role)}</p>
           </div>
@@ -74,7 +77,18 @@ export function AuthHeader({ user }: AuthHeaderProps) {
             Sign out
           </Button>
         </div>
+        <div className="flex w-full flex-wrap gap-1 lg:hidden">
+          {navItems.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="inline-flex min-h-11 items-center rounded-md px-3 text-small font-medium text-muted hover:bg-brand-50 hover:text-brand"
+            >
+              {link.label}
+            </Link>
+          ))}
+        </div>
       </div>
-    </header>
+    </NavbarFrame>
   );
 }

@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import type { AuthUser } from "@/lib/rbac";
@@ -32,7 +33,7 @@ function sessionToAuthUser(session: {
   };
 }
 
-export async function getAuthUser(): Promise<AuthUser | null> {
+export const getAuthUser = cache(async (): Promise<AuthUser | null> => {
   const session = await auth();
   if (!session?.user?.id) {
     return null;
@@ -42,55 +43,57 @@ export async function getAuthUser(): Promise<AuthUser | null> {
     return null;
   }
   return user;
-}
+});
 
-export async function requireAuth(): Promise<AuthUser> {
+export const requireAuth = cache(async (): Promise<AuthUser> => {
   const user = await getAuthUser();
   if (!user) {
     redirect("/login");
   }
   return user;
-}
+});
 
-export async function requireRole(...roles: UserRole[]): Promise<AuthUser> {
-  const user = await requireAuth();
-  if (!roles.includes(user.role)) {
-    redirect(portalPathForRole(user.role));
-  }
-  return user;
-}
+export const requireRole = cache(
+  async (...roles: UserRole[]): Promise<AuthUser> => {
+    const user = await requireAuth();
+    if (!roles.includes(user.role)) {
+      redirect(portalPathForRole(user.role));
+    }
+    return user;
+  },
+);
 
-export async function requireCitizen(): Promise<AuthUser> {
+export const requireCitizen = cache(async (): Promise<AuthUser> => {
   const user = await requireAuth();
   if (!canAccessCitizenPortal(user.role)) {
     redirect(portalPathForRole(user.role));
   }
   return user;
-}
+});
 
-export async function requireWorker(): Promise<AuthUser> {
+export const requireWorker = cache(async (): Promise<AuthUser> => {
   const user = await requireAuth();
   if (!canAccessWorkerPortal(user.role)) {
     redirect(portalPathForRole(user.role));
   }
   return user;
-}
+});
 
-export async function requireDepartmentAdmin(): Promise<AuthUser> {
+export const requireDepartmentAdmin = cache(async (): Promise<AuthUser> => {
   const user = await requireAuth();
   if (!canAccessDepartmentAdminPortal(user.role)) {
     redirect(portalPathForRole(user.role));
   }
   return user;
-}
+});
 
-export async function requireSuperAdmin(): Promise<AuthUser> {
+export const requireSuperAdmin = cache(async (): Promise<AuthUser> => {
   const user = await requireAuth();
   if (!canAccessAdminPortal(user.role)) {
     redirect(portalPathForRole(user.role));
   }
   return user;
-}
+});
 
 /** @deprecated use requireCitizen */
 export async function requireCitizenPortal(): Promise<AuthUser> {

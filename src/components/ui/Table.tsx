@@ -23,7 +23,7 @@ export function TableHeader({
 }: HTMLAttributes<HTMLTableSectionElement>) {
   return (
     <thead
-      className={cn("sticky top-0 bg-green-50 text-green-950", className)}
+      className={cn("sticky top-0 bg-brand-50 text-navy", className)}
       {...props}
     />
   );
@@ -41,7 +41,7 @@ export function TableRow({
   ...props
 }: HTMLAttributes<HTMLTableRowElement>) {
   return (
-    <tr className={cn("hover:bg-green-50/60", className)} {...props} />
+    <tr className={cn("hover:bg-brand-50/60", className)} {...props} />
   );
 }
 

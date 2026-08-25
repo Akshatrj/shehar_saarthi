@@ -1,18 +1,50 @@
-import { COMPLAINT_CATEGORIES } from "@/domains/complaints/types";
+import { COMPLAINT_CATEGORY_LABELS } from "@/domains/complaints/types";
+import type { CivicContextSummary, HistoricalTrendSummary } from "@/domains/ai/types";
 
-export const CLASSIFICATION_SYSTEM_PROMPT = `You are classifying a civic infrastructure complaint.
+export function buildGeminiAnalysisPrompt(input: {
+  description: string;
+  citizenCategory: string | null;
+  locationLabel: string | null;
+  latitude: number;
+  longitude: number;
+  trends: HistoricalTrendSummary;
+  context: CivicContextSummary;
+}) {
+  const categoryOptions = Object.entries(COMPLAINT_CATEGORY_LABELS)
+    .map(([key, label]) => `${key} (${label})`)
+    .join("\n");
+
+  return `Analyze this civic complaint for Shehar Saarthi.
+
+Citizen description: ${input.description}
+Citizen-selected category: ${input.citizenCategory ?? "Not provided"}
+Location: ${input.locationLabel ?? `${input.latitude}, ${input.longitude}`}
+
+Historical trend summary (from database, do not invent numbers):
+${input.trends.summary}
+
+Current civic context (external signal, do not invent news):
+${input.context.summary}
 
 Choose exactly one category from:
+${categoryOptions}
 
-${COMPLAINT_CATEGORIES.join("\n")}
+Return compact JSON only with these keys:
+category, categoryConfidence, description, evidenceConsistency, evidenceConfidence, evidenceReason,
+safetyRiskScore, publicImpactScore, urgencyScore, essentialServiceImpactScore,
+infrastructureSeverityScore, healthEnvironmentalRiskScore, civicImpactScore,
+priorityReason, recommendedDepartment, recommendedAction
 
-Return JSON with exactly these keys:
-- category: one of the categories above
-- description: one concise sentence describing what you see
+Rules:
+- category must be one of the enum keys above
+- evidenceConsistency: CONSISTENT | POTENTIAL_MISMATCH | NEEDS_REVIEW | INCONCLUSIVE
+- scores are integers 0-100
+- categoryConfidence and evidenceConfidence are 0-1 decimals
+- recommendedDepartment must be one of: Roads, Sanitation, Electrical, Water, Parks
+- recommendedAction: STANDARD_ROUTING or PRIORITY_ROUTING or NEEDS_REVIEW
+- Keep description to one concise sentence
+- Do not invent statistics or news beyond the summaries provided`;
+}
 
-If the image does not clearly match one of the categories, choose OTHER.
-
-Do not invent categories. Do not include any keys other than category and description.`;
-
-export const CLASSIFICATION_USER_PROMPT =
-  "Classify this civic infrastructure complaint photograph.";
+export const GEMINI_SYSTEM_INSTRUCTION =
+  "You assist a civic complaint management system. Return valid JSON only. Be concise. Do not include chain-of-thought.";

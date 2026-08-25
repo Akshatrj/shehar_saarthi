@@ -65,6 +65,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             account.
           </Alert>
         ) : null}
+        {params.error === "database" ? (
+          <Alert variant="danger" title="Could not finish sign-in">
+            Google accepted your account, but the database is not reachable
+            right now. If this is a Neon project, wake the compute in the Neon
+            dashboard and try again.
+          </Alert>
+        ) : null}
         {params.error === "Configuration" ? (
           <Alert variant="danger" title="Google sign-in is not configured">
             Add <code className="text-small">AUTH_GOOGLE_ID</code> and{" "}

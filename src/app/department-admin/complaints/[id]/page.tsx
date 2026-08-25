@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ComplaintHistoryList } from "@/components/complaints/ComplaintHistoryList";
 import { DepartmentAdminComplaintActions } from "@/components/department-admin/DepartmentAdminComplaintActions";
+import { DepartmentAdminAiInsights } from "@/components/department-admin/DepartmentAdminAiInsights";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -95,6 +96,8 @@ export default async function DepartmentAdminComplaintDetailPage({
                 : "—"}
             </p>
           </Card>
+
+          <DepartmentAdminAiInsights complaint={complaint} />
 
           <Card className="p-5">
             <h2 className="text-h3 text-navy">Actions</h2>

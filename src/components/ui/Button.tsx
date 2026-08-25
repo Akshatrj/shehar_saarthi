@@ -4,7 +4,7 @@ import { cn } from "@/lib/cn";
 
 const variants = {
   primary:
-    "bg-orange text-white shadow-brand hover:bg-orange-dark focus-visible:outline-orange",
+    "ss-btn-civic bg-orange text-white shadow-brand hover:bg-orange-dark focus-visible:outline-orange",
   secondary:
     "bg-paper-raised text-brand-dark ring-1 ring-inset ring-line hover:bg-brand-50 focus-visible:outline-brand",
   ghost:

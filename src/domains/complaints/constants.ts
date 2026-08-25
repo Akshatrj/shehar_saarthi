@@ -119,6 +119,18 @@ export type WorkerComplaintDetail = {
   category: string | null;
   aiCategory: string | null;
   aiDescription: string | null;
+  aiCategoryConfidence: number | null;
+  evidenceConsistency: string | null;
+  evidenceConfidence: number | null;
+  evidenceReason: string | null;
+  aiPriority: string | null;
+  priorityScore: number | null;
+  civicImpactScore: number | null;
+  requiresManualReview: boolean;
+  recommendedDepartmentName: string | null;
+  recommendedAction: string | null;
+  priorityReason: string | null;
+  recurringProblem: boolean;
   status: string;
   latitude: string;
   longitude: string;

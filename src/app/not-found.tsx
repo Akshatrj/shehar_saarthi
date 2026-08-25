@@ -24,8 +24,8 @@ export default function NotFound() {
     >
       <PublicPage>
         <div className="mx-auto max-w-lg py-10 sm:py-16">
-          <p className="text-small font-medium text-green-800">404</p>
-          <h1 className="mt-2 text-h1 text-green-950">Page not found</h1>
+          <p className="text-small font-medium text-brand">404</p>
+          <h1 className="mt-2 text-h1 text-navy">Page not found</h1>
           <p className="mt-2 text-body text-muted">
             This address is not part of SheharSaarthi. Check the link or return
             home.

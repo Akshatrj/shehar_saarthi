@@ -9,7 +9,7 @@ import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 
 export function LandingHero() {
   const prefersReducedMotion = usePrefersReducedMotion();
-  const [scrollY, setScrollY] = useState(0);
+  const [parallax, setParallax] = useState(0);
   const [motionEnabled, setMotionEnabled] = useState(false);
   const [entered, setEntered] = useState(false);
 
@@ -23,7 +23,15 @@ export function LandingHero() {
 
     const frame = window.requestAnimationFrame(() => setEntered(true));
 
-    const onScroll = () => setScrollY(window.scrollY);
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(() => {
+        setParallax(Math.min(window.scrollY * 0.18, 96));
+        ticking = false;
+      });
+    };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
 
@@ -33,33 +41,22 @@ export function LandingHero() {
     };
   }, [prefersReducedMotion]);
 
-  const parallax = prefersReducedMotion ? 0 : Math.min(scrollY * 0.18, 96);
-  const heroFade = prefersReducedMotion ? 1 : Math.max(0, 1 - scrollY / 520);
-
   return (
     <section className="ss-hero-gradient relative overflow-hidden border-b border-navy-light text-white">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 opacity-70"
-        style={{
-          transform: prefersReducedMotion
-            ? undefined
-            : `translateY(${scrollY * 0.08}px)`,
-        }}
       >
         <div className="absolute -left-24 top-10 h-56 w-56 rounded-full bg-brand-light/20 blur-3xl" />
         <div className="absolute bottom-0 right-0 h-72 w-72 rounded-full bg-orange/15 blur-3xl" />
       </div>
 
       <div className="relative mx-auto max-w-6xl px-4 py-14 sm:py-20 lg:py-24">
-        <div
-          className="flex flex-col gap-10 lg:flex-row lg:items-center lg:justify-between"
-          style={{ opacity: heroFade }}
-        >
+        <div className="flex flex-col gap-10 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-2xl">
             <p
               className={cn(
-                "text-small font-semibold uppercase tracking-[0.16em] text-brand-light",
+                "text-small font-semibold uppercase tracking-[0.18em] text-brand-light",
                 motionEnabled && "ss-hero-enter ss-hero-enter--1",
                 motionEnabled && entered && "ss-hero-enter--visible",
               )}
@@ -68,22 +65,22 @@ export function LandingHero() {
             </p>
             <h1
               className={cn(
-                "mt-3 text-[2.125rem] font-semibold leading-[1.12] tracking-tight text-white sm:text-display",
+                "mt-3 text-[2.125rem] font-semibold leading-[1.12] tracking-tight text-white drop-shadow-[0_2px_18px_rgb(10_25_47_/_0.45)] sm:text-display",
                 motionEnabled && "ss-hero-enter ss-hero-enter--2",
                 motionEnabled && entered && "ss-hero-enter--visible",
               )}
             >
-              Your City. Your Voice. Your Change.
+              Your City. Your Voice. Your Saarthi.
             </h1>
             <p
               className={cn(
-                "mt-4 max-w-xl text-body text-navy-muted sm:text-lg sm:leading-7",
+                "ss-hero-lede mt-4 max-w-xl text-body sm:text-lg sm:leading-7",
                 motionEnabled && "ss-hero-enter ss-hero-enter--3",
                 motionEnabled && entered && "ss-hero-enter--visible",
               )}
             >
-              Photograph a civic problem, pin the place, and follow the work until
-              it is done. Field teams see the issue — not your name.
+              Report civic issues, track their progress, and help make your city
+              better.
             </p>
             <div
               className={cn(
@@ -92,8 +89,8 @@ export function LandingHero() {
                 motionEnabled && entered && "ss-hero-enter--visible",
               )}
             >
-              <ButtonLink href={PUBLIC_REPORT_HREF} size="lg">
-                Report an issue
+              <ButtonLink href={PUBLIC_REPORT_HREF} size="lg" className="ss-btn-civic">
+                Report an Issue
               </ButtonLink>
               <ButtonLink
                 href={PUBLIC_TRACK_HREF}
@@ -101,7 +98,7 @@ export function LandingHero() {
                 size="lg"
                 className="border-white/20 bg-white/10 text-white ring-white/25 hover:bg-white/15"
               >
-                Track a complaint
+                Track Complaint
               </ButtonLink>
             </div>
           </div>
@@ -113,9 +110,7 @@ export function LandingHero() {
               motionEnabled && entered && "ss-hero-enter--visible",
             )}
             style={{
-              transform: prefersReducedMotion
-                ? undefined
-                : `translateY(${parallax}px)`,
+              transform: prefersReducedMotion ? undefined : `translateY(${parallax}px)`,
             }}
           >
             <HeroLogoShowcase />

@@ -21,6 +21,7 @@ const ComplaintsMap = dynamic(
 type LazyComplaintsMapProps = {
   complaints: MapComplaintPin[];
   detailPathPrefix: string;
+  linkableDepartmentId?: string;
   mapTotalCount: number;
   mapTruncated: boolean;
 };
@@ -36,6 +37,7 @@ function MapPlaceholder() {
 export function LazyComplaintsMap({
   complaints,
   detailPathPrefix,
+  linkableDepartmentId,
   mapTotalCount,
   mapTruncated,
 }: LazyComplaintsMapProps) {
@@ -73,6 +75,7 @@ export function LazyComplaintsMap({
         <ComplaintsMap
           complaints={complaints}
           detailPathPrefix={detailPathPrefix}
+          linkableDepartmentId={linkableDepartmentId}
           mapTotalCount={mapTotalCount}
           mapTruncated={mapTruncated}
         />

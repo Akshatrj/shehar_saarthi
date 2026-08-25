@@ -23,6 +23,8 @@ const STATUS_PIN_COLORS: Record<ComplaintStatus, string> = {
 type ComplaintsMapProps = {
   complaints: MapComplaintPin[];
   detailPathPrefix: string;
+  /** When set, only complaints in this department get a detail link. */
+  linkableDepartmentId?: string;
   mapTotalCount: number;
   mapTruncated: boolean;
   className?: string;
@@ -37,13 +39,22 @@ function escapeHtml(value: string) {
     .replaceAll("'", "&#39;");
 }
 
-function buildPopupHtml(complaint: MapComplaintPin, detailPathPrefix: string) {
+function buildPopupHtml(
+  complaint: MapComplaintPin,
+  detailPathPrefix: string,
+  linkableDepartmentId?: string,
+) {
   const category = complaint.category
     ? COMPLAINT_CATEGORY_LABELS[complaint.category]
     : "Uncategorized";
   const status = COMPLAINT_STATUS_LABELS[complaint.status];
   const department = complaint.departmentName ?? "Not routed yet";
+  const canLink =
+    !linkableDepartmentId || complaint.departmentId === linkableDepartmentId;
   const link = `${detailPathPrefix}/${complaint.id}`;
+  const linkHtml = canLink
+    ? `<a class="ss-map-popup__link" href="${escapeHtml(link)}">View complaint</a>`
+    : `<p class="ss-map-popup__note">Managed by ${escapeHtml(department)}</p>`;
 
   return `
     <div class="ss-map-popup">
@@ -51,7 +62,7 @@ function buildPopupHtml(complaint: MapComplaintPin, detailPathPrefix: string) {
       <p><strong>${escapeHtml(status)}</strong> · ${escapeHtml(category)}</p>
       <p class="ss-map-popup__note">${escapeHtml(complaint.description)}</p>
       <p class="ss-map-popup__note">${escapeHtml(department)}</p>
-      <a class="ss-map-popup__link" href="${escapeHtml(link)}">View complaint</a>
+      ${linkHtml}
     </div>
   `;
 }
@@ -59,6 +70,7 @@ function buildPopupHtml(complaint: MapComplaintPin, detailPathPrefix: string) {
 export function ComplaintsMap({
   complaints,
   detailPathPrefix,
+  linkableDepartmentId,
   mapTotalCount,
   mapTruncated,
   className,
@@ -164,7 +176,7 @@ export function ComplaintsMap({
         }),
       });
 
-      marker.bindPopup(buildPopupHtml(complaint, detailPathPrefix), {
+      marker.bindPopup(buildPopupHtml(complaint, detailPathPrefix, linkableDepartmentId), {
         maxWidth: 280,
       });
       clusterGroup.addLayer(marker);
@@ -180,7 +192,7 @@ export function ComplaintsMap({
     } else {
       map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
     }
-  }, [complaints, complaintsKey, detailPathPrefix]);
+  }, [complaints, complaintsKey, detailPathPrefix, linkableDepartmentId]);
 
   return (
     <div

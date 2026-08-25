@@ -1,8 +1,11 @@
+import { Suspense } from "react";
+import { DashboardInsightsFallback } from "@/components/dashboard/DashboardInsightsFallback";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { PaginationNav } from "@/components/ui/PaginationNav";
 import { WorkerComplaintFilters } from "@/components/worker/WorkerComplaintFilters";
 import { WorkerComplaintTable } from "@/components/worker/WorkerComplaintTable";
+import { WorkerDashboardInsights } from "@/components/worker/WorkerDashboardInsights";
 import { WorkerStatsGrid } from "@/components/worker/WorkerStatsGrid";
 import {
   getWorkerComplaintStats,
@@ -70,6 +73,10 @@ export default async function WorkerHomePage({ searchParams }: PageProps) {
       />
 
       <WorkerStatsGrid stats={stats} />
+
+      <Suspense fallback={<DashboardInsightsFallback />}>
+        <WorkerDashboardInsights />
+      </Suspense>
 
       <Card className="flex flex-col gap-4 p-5">
         <div className="flex flex-col gap-1">

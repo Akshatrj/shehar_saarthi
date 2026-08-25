@@ -80,21 +80,17 @@ export default async function CitizenComplaintDetailPage({ params }: PageProps) 
                 : "Pending confirmation"}
             </p>
 
-            {complaint.aiCategory ? (
+            {complaint.status !== "SUBMITTED" && complaint.aiCategory ? (
               <>
-                <h2 className="mt-4 text-h3 text-navy">AI category</h2>
+                <h2 className="mt-4 text-h3 text-navy">AI suggestion</h2>
                 <p className="mt-2 text-body text-ink">
                   {COMPLAINT_CATEGORY_LABELS[complaint.aiCategory as ComplaintCategory]}
                 </p>
-              </>
-            ) : null}
-
-            {complaint.aiDescription ? (
-              <>
-                <h2 className="mt-4 text-h3 text-navy">AI explanation</h2>
-                <p className="mt-2 text-body text-ink">
-                  &ldquo;{complaint.aiDescription}&rdquo;
-                </p>
+                {complaint.aiDescription ? (
+                  <p className="mt-2 text-small text-muted">
+                    &ldquo;{complaint.aiDescription}&rdquo;
+                  </p>
+                ) : null}
               </>
             ) : null}
 

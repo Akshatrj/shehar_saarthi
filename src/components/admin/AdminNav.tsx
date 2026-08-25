@@ -6,6 +6,7 @@ const links = [
   { href: "/admin/users", label: "Users" },
   { href: "/admin/departments", label: "Departments" },
   { href: "/admin/complaints", label: "Complaints" },
+  { href: "/admin/ai", label: "AI Intelligence" },
 ];
 
 export function AdminNav({ pathname }: { pathname: string }) {

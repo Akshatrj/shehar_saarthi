@@ -42,7 +42,7 @@ export function ComplaintList({
         <li key={complaint.id}>
           <Link
             href={`/citizen/complaints/${complaint.id}`}
-            className="flex h-full flex-col overflow-hidden rounded-lg border border-line bg-paper-raised transition-colors hover:border-brand/40 hover:bg-brand-50/30"
+            className="ss-category-card flex h-full flex-col overflow-hidden rounded-lg border border-line bg-paper-raised shadow-sm"
           >
             <div className="relative h-36 w-full bg-paper">
               <Image
