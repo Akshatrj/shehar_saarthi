@@ -54,6 +54,8 @@ export type GeminiRawAnalysis = {
   healthEnvironmentalRiskScore: number;
   civicImpactScore: number;
   priorityReason: string;
+  classificationReason: string;
+  serviceType: string;
   recommendedDepartment: string;
   recommendedAction: string;
 };
@@ -82,6 +84,8 @@ export type ClassificationAnalysisResult = {
   currentContextScore: number | null;
   recurringProblem: boolean;
   priorityReason: string;
+  classificationReason: string;
+  serviceType: string;
   recommendedDepartment: string;
   recommendedAction: string;
   requiresManualReview: boolean;

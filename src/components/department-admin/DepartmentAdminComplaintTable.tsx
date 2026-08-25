@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import {
@@ -40,7 +39,6 @@ export function DepartmentAdminComplaintTable({
     <Table caption="Department complaints">
       <TableHeader>
         <TableRow>
-          <TableHead>Photo</TableHead>
           <TableHead>ID</TableHead>
           <TableHead>Category</TableHead>
           <TableHead>Description</TableHead>
@@ -52,17 +50,6 @@ export function DepartmentAdminComplaintTable({
       <TableBody>
         {complaints.map((complaint) => (
           <TableRow key={complaint.id}>
-            <TableCell>
-              <div className="relative h-12 w-16 overflow-hidden rounded-md border border-line bg-paper">
-                <Image
-                  src={complaint.imageUrl}
-                  alt=""
-                  fill
-                  sizes="64px"
-                  className="object-cover"
-                />
-              </div>
-            </TableCell>
             <TableCell>
               <Link
                 href={`/department-admin/complaints/${complaint.id}`}

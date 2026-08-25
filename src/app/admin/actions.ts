@@ -6,11 +6,19 @@ import {
   createAdminDepartment,
   updateAdminDepartment,
 } from "@/domains/admin/departments";
-import { overrideAdminComplaint } from "@/domains/admin/complaints";
+import {
+  overrideAdminComplaint,
+  routeAdminComplaintWithAi,
+  acceptRoutingRecommendation,
+  assignDepartmentManually,
+  autoRouteAllComplaints,
+} from "@/domains/admin/complaints";
 import { updateAdminUser } from "@/domains/admin/users";
 import { AdminError } from "@/domains/admin/auth";
 
-export type AdminActionResult = { ok: true } | { ok: false; error: string };
+export type AdminActionResult =
+  | { ok: true; summary?: { processed: number; routed: number; manualRequired: number } }
+  | { ok: false; error: string };
 
 function failure(message: string): AdminActionResult {
   return { ok: false, error: message };
@@ -77,6 +85,54 @@ export async function updateDepartmentAction(
       }),
     ["/admin/departments"],
   );
+}
+
+export async function routeWithAiAction(
+  complaintId: string,
+): Promise<AdminActionResult> {
+  return runAdminAction(
+    (actor) => routeAdminComplaintWithAi(actor, complaintId),
+    ["/admin/complaints", `/admin/complaints/${complaintId}`, "/admin/ai"],
+  );
+}
+
+export async function acceptRoutingRecommendationAction(
+  complaintId: string,
+): Promise<AdminActionResult> {
+  return runAdminAction(
+    (actor) => acceptRoutingRecommendation(actor, complaintId),
+    ["/admin/complaints", `/admin/complaints/${complaintId}`],
+  );
+}
+
+export async function assignDepartmentAction(
+  complaintId: string,
+  input: { departmentId: string; reason?: string },
+): Promise<AdminActionResult> {
+  return runAdminAction(
+    (actor) =>
+      assignDepartmentManually(actor, complaintId, {
+        departmentId: input.departmentId,
+        reason: input.reason,
+      }),
+    ["/admin/complaints", `/admin/complaints/${complaintId}`],
+  );
+}
+
+export async function autoRouteAllAction(): Promise<AdminActionResult> {
+  try {
+    const actor = await requireSuperAdmin();
+    const summary = await autoRouteAllComplaints(actor);
+    revalidatePath("/admin/complaints");
+    revalidatePath("/admin");
+    return { ok: true, summary };
+  } catch (error) {
+    if (error instanceof AdminError) {
+      return failure(error.message);
+    }
+    console.error("admin action failed", error);
+    return failure("Action failed. Please try again.");
+  }
 }
 
 export async function overrideComplaintAction(

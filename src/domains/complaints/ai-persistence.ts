@@ -2,6 +2,8 @@ import { prisma } from "@/lib/db";
 import type { ComplaintCategory } from "@/domains/complaints/types";
 import type { ClassificationAnalysisResult } from "@/domains/ai/types";
 import { ComplaintServiceError } from "@/domains/complaints/service";
+import { serviceTypeForCategory } from "@/domains/complaints/categories";
+import { refreshComplaintRoutingRecommendation } from "@/domains/routing/orchestrator";
 
 export async function saveComplaintAiAnalysis(
   citizenId: string,
@@ -39,11 +41,29 @@ export async function saveComplaintAiAnalysis(
         prioritySource: analysis.prioritySource,
         recommendedDepartmentName: analysis.recommendedDepartment,
         recommendedAction: analysis.recommendedAction,
+        serviceType: serviceTypeForCategory(analysis.category as ComplaintCategory),
+        aiClassificationReason: analysis.classificationReason,
+        routingStatus: "AI_ANALYZED",
         aiRequestId: analysis.requestId,
         historicalTrendScore: analysis.historicalTrendScore,
         currentContextScore: analysis.currentContextScore,
         recurringProblem: analysis.recurringProblem,
         priorityReason: analysis.priorityReason,
+      },
+    });
+
+    await tx.complaintHistory.create({
+      data: {
+        complaintId,
+        action: "AI_CLASSIFIED",
+        oldStatus: "SUBMITTED",
+        newStatus: "SUBMITTED",
+        metadata: JSON.stringify({
+          category: analysis.category,
+          confidence: analysis.categoryConfidence,
+          reason: analysis.classificationReason,
+          serviceType: analysis.serviceType,
+        }),
       },
     });
 
@@ -92,6 +112,12 @@ export async function saveComplaintAiAnalysis(
       },
     });
   });
+
+  try {
+    await refreshComplaintRoutingRecommendation(complaintId, { aiAnalyzed: true });
+  } catch (error) {
+    console.error("post-ai routing recommendation failed", { complaintId, error });
+  }
 
   return Date.now() - dbStart;
 }
@@ -146,6 +172,12 @@ export async function logAiFallback(
       },
     });
   });
+
+  try {
+    await refreshComplaintRoutingRecommendation(complaintId);
+  } catch (error) {
+    console.error("fallback routing recommendation failed", { complaintId, error });
+  }
 }
 
 // Backward-compatible helper

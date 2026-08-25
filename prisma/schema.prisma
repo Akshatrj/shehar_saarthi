@@ -28,13 +28,40 @@ enum ComplaintStatus {
 enum ComplaintCategory {
   POTHOLE
   DAMAGED_ROAD
-  GARBAGE
-  BLOCKED_DRAIN
-  BROKEN_STREETLIGHT
-  WATER_LEAKAGE
-  FALLEN_TREE
   DAMAGED_FOOTPATH
+  ROAD_OBSTRUCTION
+  BROKEN_STREETLIGHT
+  FLICKERING_STREETLIGHT
+  DARK_AREA
+  GARBAGE
+  OVERFLOWING_DUSTBIN
+  ILLEGAL_DUMPING
+  WATER_LEAKAGE
+  NO_WATER_SUPPLY
+  CONTAMINATED_WATER
+  BLOCKED_DRAIN
+  OVERFLOWING_DRAIN
+  DAMAGED_DRAIN
+  FALLEN_TREE
   OTHER
+}
+
+enum ServiceType {
+  ROADS
+  STREET_LIGHTING
+  SANITATION
+  WATER
+  DRAINAGE
+  PARKS
+  OTHER
+}
+
+enum RoutingStatus {
+  UNASSIGNED
+  AI_ANALYZED
+  ROUTING_RECOMMENDED
+  AUTO_ASSIGNED
+  MANUALLY_ASSIGNED
 }
 
 enum AiPriority {
@@ -77,6 +104,7 @@ model User {
   department         Department?        @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   complaints         Complaint[]        @relation("CitizenComplaints")
   assignedComplaints Complaint[]        @relation("AssignedComplaints")
+  routedComplaints   Complaint[]        @relation("RoutedComplaints")
   historyEntries     ComplaintHistory[]
 
   @@index([departmentId])
@@ -84,14 +112,22 @@ model User {
 }
 
 model Department {
-  id        String   @id @default(uuid()) @db.Uuid
-  name      String   @unique
-  code      String   @unique
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
+  id                   String              @id @default(uuid()) @db.Uuid
+  name                 String              @unique
+  code                 String              @unique
+  description          String?             @db.VarChar(500)
+  latitude             Decimal?            @db.Decimal(9, 6)
+  longitude            Decimal?            @db.Decimal(9, 6)
+  jurisdictionRadiusKm Decimal?            @db.Decimal(8, 2)
+  workloadScore        Int                 @default(0)
+  supportedCategories  ComplaintCategory[]
+  isActive             Boolean             @default(true)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
 
-  users      User[]
-  complaints Complaint[]
+  users                 User[]
+  complaints            Complaint[]
+  recommendedComplaints Complaint[]         @relation("RecommendedDepartment")
 
   @@map("departments")
 }
@@ -115,7 +151,18 @@ model Complaint {
   requiresManualReview Boolean          @default(false)
   prioritySource       PrioritySource?
   recommendedDepartmentName String?
-  recommendedAction    String?
+  recommendedDepartmentId   String?            @db.Uuid
+  recommendedDistanceKm     Decimal?           @db.Decimal(8, 2)
+  routingReason             String?            @db.VarChar(500)
+  routingConfidence         Decimal?           @db.Decimal(4, 3)
+  rankedRecommendations     Json?
+  routingStatus             RoutingStatus      @default(UNASSIGNED)
+  serviceType               ServiceType?
+  aiClassificationReason    String?            @db.VarChar(500)
+  routedAt                  DateTime?
+  routedById                String?            @db.Uuid
+  manualAssignmentReason    String?            @db.VarChar(500)
+  recommendedAction         String?
   aiRequestId          String?            @db.VarChar(32)
   historicalTrendScore Int?
   currentContextScore  Int?
@@ -130,13 +177,17 @@ model Complaint {
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
 
-  citizen        User               @relation("CitizenComplaints", fields: [citizenId], references: [id], onDelete: Restrict)
-  department     Department?        @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  assignedWorker User?              @relation("AssignedComplaints", fields: [assignedWorkerId], references: [id], onDelete: SetNull)
+  citizen                User               @relation("CitizenComplaints", fields: [citizenId], references: [id], onDelete: Restrict)
+  department             Department?        @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  recommendedDepartment  Department?        @relation("RecommendedDepartment", fields: [recommendedDepartmentId], references: [id], onDelete: SetNull)
+  assignedWorker         User?              @relation("AssignedComplaints", fields: [assignedWorkerId], references: [id], onDelete: SetNull)
+  routedBy               User?              @relation("RoutedComplaints", fields: [routedById], references: [id], onDelete: SetNull)
   history        ComplaintHistory[]
   aiLogs         AiClassificationLog[]
 
   @@index([departmentId, status])
+  @@index([recommendedDepartmentId])
+  @@index([routingStatus])
   @@index([assignedWorkerId])
   @@index([citizenId])
   @@index([createdAt])

@@ -78,6 +78,39 @@ export function buildCitizenTimeline(input: {
     }
 
     if (
+      entry.action === "ROUTING_RECOMMENDED" ||
+      entry.action === "AI_CLASSIFIED" ||
+      entry.action === "AUTO_ROUTED" ||
+      entry.action === "MANUALLY_ROUTED"
+    ) {
+      let detail: string | undefined;
+      if (entry.metadata) {
+        try {
+          const meta = JSON.parse(entry.metadata) as Record<string, unknown>;
+          if (typeof meta.reason === "string") {
+            detail = meta.reason;
+          }
+        } catch {
+          // ignore malformed metadata
+        }
+      }
+      items.push({
+        id: entry.id,
+        label:
+          entry.action === "ROUTING_RECOMMENDED"
+            ? "Routing recommendation generated"
+            : entry.action === "AI_CLASSIFIED"
+              ? "AI classified complaint"
+              : entry.action === "AUTO_ROUTED"
+                ? "Auto-routed to department"
+                : "Manually routed to department",
+        detail,
+        createdAt: entry.createdAt,
+      });
+      continue;
+    }
+
+    if (
       entry.action === "CATEGORY_CONFIRMED" ||
       entry.action === "CATEGORY_CHANGED"
     ) {

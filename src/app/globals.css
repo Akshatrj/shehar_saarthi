@@ -237,7 +237,9 @@ h3,
   }
 
   .ss-stat-card:hover {
-    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+    border-color: color-mix(in srgb, var(--color-brand) 28%, var(--color-line));
   }
 }
 
@@ -622,6 +624,13 @@ h3,
 .ss-map .leaflet-container {
   font-family: var(--font-sans);
   background: var(--color-brand-50);
+}
+
+/* Tailwind preflight sets img { max-width: 100% }, which breaks Leaflet tiles. */
+.leaflet-container img.leaflet-tile,
+.ss-map.leaflet-container img {
+  max-width: none !important;
+  max-height: none !important;
 }
 
 .ss-map-pin {

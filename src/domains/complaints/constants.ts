@@ -1,5 +1,9 @@
 export const COMPLAINT_HISTORY_ACTIONS = [
   "SUBMITTED",
+  "AI_CLASSIFIED",
+  "ROUTING_RECOMMENDED",
+  "AUTO_ROUTED",
+  "MANUALLY_ROUTED",
   "CATEGORY_CONFIRMED",
   "CATEGORY_CHANGED",
   "ASSIGNED_TO_SELF",
@@ -13,7 +17,14 @@ export const COMPLAINT_HISTORY_ACTIONS = [
 export type ComplaintHistoryAction =
   (typeof COMPLAINT_HISTORY_ACTIONS)[number];
 
-export const ROUTING_METHODS = ["AI_CONFIRMED", "USER_SELECTED"] as const;
+export const ROUTING_METHODS = [
+  "AI_CONFIRMED",
+  "USER_SELECTED",
+  "ROUTING_ENGINE",
+  "ADMIN_ACCEPTED",
+  "ADMIN_MANUAL",
+  "AUTO_ROUTE_ALL",
+] as const;
 
 export type RoutingMethod = (typeof ROUTING_METHODS)[number];
 
@@ -88,7 +99,6 @@ export type WorkerComplaintListItem = {
   id: string;
   publicRef: string;
   description: string;
-  imageUrl: string;
   category: string | null;
   status: string;
   createdAt: string;

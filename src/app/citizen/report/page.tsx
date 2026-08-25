@@ -1,6 +1,6 @@
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
-import { ReportIssueForm } from "@/components/citizen/ReportIssueForm";
+import { LazyReportIssueForm } from "@/components/citizen/LazyReportIssueForm";
 
 export default function CitizenReportPage() {
   return (
@@ -18,7 +18,7 @@ export default function CitizenReportPage() {
             you sign in.
           </CardDescription>
         </CardHeader>
-        <ReportIssueForm />
+        <LazyReportIssueForm />
       </Card>
     </div>
   );

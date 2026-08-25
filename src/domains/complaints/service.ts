@@ -1,7 +1,10 @@
 import { prisma } from "@/lib/db";
 import type { AuthUser } from "@/lib/rbac";
-import type { ComplaintStatus } from "@/domains/complaints/types";
+import type { ComplaintCategory, ComplaintStatus } from "@/domains/complaints/types";
 import type { CitizenComplaintSummary } from "@/domains/complaints/constants";
+import { serviceTypeForCategory } from "@/domains/complaints/categories";
+import { parseComplaintCategory, CategoryRoutingError } from "@/domains/complaints/routing";
+import { refreshComplaintRoutingRecommendation } from "@/domains/routing/orchestrator";
 import { uploadComplaintImage } from "@/domains/storage/blob";
 import {
   ComplaintValidationError,
@@ -28,6 +31,7 @@ function mapSummary(row: {
   description: string;
   imageUrl: string;
   status: ComplaintStatus;
+  category: ComplaintCategory | null;
   createdAt: Date;
 }): CitizenComplaintSummary {
   return {
@@ -36,7 +40,7 @@ function mapSummary(row: {
     description: row.description,
     imageUrl: row.imageUrl,
     status: row.status,
-    category: null,
+    category: row.category,
     createdAt: row.createdAt.toISOString(),
   };
 }
@@ -68,6 +72,7 @@ export async function createCitizenComplaint(
     description: unknown;
     latitude: unknown;
     longitude: unknown;
+    category: unknown;
   },
 ) {
   if (actor.role !== "CITIZEN") {
@@ -88,6 +93,16 @@ export async function createCitizenComplaint(
   const latitude = validateCoordinate(input.latitude, "latitude");
   const longitude = validateCoordinate(input.longitude, "longitude");
 
+  let category: ComplaintCategory;
+  try {
+    category = parseComplaintCategory(input.category);
+  } catch (error) {
+    if (error instanceof CategoryRoutingError) {
+      throw new ComplaintValidationError(error.message);
+    }
+    throw error;
+  }
+
   const imageUrl = await uploadComplaintImage({
     citizenId: actor.id,
     bytes,
@@ -106,7 +121,10 @@ export async function createCitizenComplaint(
         latitude,
         longitude,
         status: "SUBMITTED",
-        category: null,
+        category,
+        departmentId: null,
+        serviceType: serviceTypeForCategory(category),
+        routingStatus: "UNASSIGNED",
         aiCategory: null,
         aiDescription: null,
       },
@@ -116,6 +134,7 @@ export async function createCitizenComplaint(
         description: true,
         imageUrl: true,
         status: true,
+        category: true,
         createdAt: true,
       },
     });
@@ -127,11 +146,21 @@ export async function createCitizenComplaint(
         action: "SUBMITTED",
         oldStatus: null,
         newStatus: "SUBMITTED",
+        metadata: JSON.stringify({ category }),
       },
     });
 
     return created;
   });
+
+  try {
+    await refreshComplaintRoutingRecommendation(complaint.id);
+  } catch (error) {
+    console.error("initial routing recommendation failed", {
+      complaintId: complaint.id,
+      error,
+    });
+  }
 
   return mapSummary(complaint);
 }
@@ -146,6 +175,7 @@ export async function listCitizenComplaints(actor: AuthUser) {
       description: true,
       imageUrl: true,
       status: true,
+      category: true,
       createdAt: true,
     },
   });
@@ -162,6 +192,7 @@ export async function getCitizenComplaint(actor: AuthUser, complaintId: string) 
       description: true,
       imageUrl: true,
       status: true,
+      category: true,
       createdAt: true,
     },
   });

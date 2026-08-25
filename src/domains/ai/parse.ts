@@ -5,7 +5,8 @@ import {
 } from "@/domains/complaints/types";
 import type { EvidenceConsistency, GeminiRawAnalysis } from "@/domains/ai/types";
 import { clampConfidence, clampScore } from "@/domains/ai/priority";
-import { DEPARTMENT_NAMES, DEPARTMENT_SLUGS } from "@/domains/complaints/categories";
+import { DEPARTMENT_NAMES, DEPARTMENT_SLUGS, serviceTypeForCategory } from "@/domains/complaints/categories";
+import type { ServiceType } from "@/domains/complaints/types";
 
 const CATEGORY_SET = new Set<string>(COMPLAINT_CATEGORIES);
 const EVIDENCE_VALUES = new Set<EvidenceConsistency>([
@@ -63,6 +64,33 @@ function normalizeEvidence(value: unknown): EvidenceConsistency {
   return EVIDENCE_VALUES.has(upper) ? upper : "INCONCLUSIVE";
 }
 
+const SERVICE_TYPE_SET = new Set<string>([
+  "ROADS",
+  "STREET_LIGHTING",
+  "SANITATION",
+  "WATER",
+  "DRAINAGE",
+  "PARKS",
+  "OTHER",
+]);
+
+function normalizeServiceType(value: unknown, category: ComplaintCategory): ServiceType {
+  if (typeof value === "string") {
+    const upper = value.trim().toUpperCase().replace(/\s+/g, "_");
+    if (SERVICE_TYPE_SET.has(upper)) {
+      return upper as ServiceType;
+    }
+  }
+  return serviceTypeForCategory(category);
+}
+
+function normalizeClassificationReason(value: unknown, description: string): string {
+  if (typeof value === "string" && value.trim()) {
+    return value.trim().slice(0, 500);
+  }
+  return description.slice(0, 500);
+}
+
 function normalizeDepartment(value: unknown): string {
   if (typeof value !== "string" || !value.trim()) {
     return DEPARTMENT_NAMES.roads;
@@ -110,10 +138,11 @@ export function parseGeminiAnalysisOutput(raw: string): GeminiRawAnalysis {
   }
 
   const record = parsed as Record<string, unknown>;
+  const category = normalizeCategory(record.category);
 
   return {
-    category: normalizeCategory(record.category),
-    categoryConfidence: clampConfidence(Number(record.categoryConfidence ?? 0)),
+    category,
+    categoryConfidence: clampConfidence(Number(record.categoryConfidence ?? record.confidence ?? 0)),
     description: normalizeDescription(record.description),
     evidenceConsistency: normalizeEvidence(record.evidenceConsistency),
     evidenceConfidence: clampConfidence(Number(record.evidenceConfidence ?? 0)),
@@ -138,6 +167,11 @@ export function parseGeminiAnalysisOutput(raw: string): GeminiRawAnalysis {
       typeof record.priorityReason === "string" && record.priorityReason.trim()
         ? record.priorityReason.trim().slice(0, 500)
         : "Civic impact assessment based on visible issue severity.",
+    classificationReason: normalizeClassificationReason(
+      record.reason ?? record.classificationReason,
+      normalizeDescription(record.description),
+    ),
+    serviceType: normalizeServiceType(record.serviceType, category),
     recommendedDepartment: normalizeDepartment(record.recommendedDepartment),
     recommendedAction:
       typeof record.recommendedAction === "string" && record.recommendedAction.trim()

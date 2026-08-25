@@ -44,6 +44,7 @@ export async function POST(request: Request) {
   }
 
   const photo = formData.get("photo");
+  const category = formData.get("category");
   const description = formData.get("description");
   const latitude = formData.get("latitude");
   const longitude = formData.get("longitude");
@@ -51,6 +52,7 @@ export async function POST(request: Request) {
   try {
     const complaint = await createCitizenComplaint(gate.user, {
       photo: photo instanceof File ? photo : new File([], ""),
+      category,
       description,
       latitude,
       longitude,

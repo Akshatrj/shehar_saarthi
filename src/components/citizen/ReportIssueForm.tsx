@@ -4,6 +4,7 @@ import { FormEvent, useMemo, useState } from "react";
 import { MapPin } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ComplaintSuccessPanel } from "@/components/citizen/ComplaintSuccessPanel";
+import { CategoryPicker } from "@/components/citizen/CategoryPicker";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Field, controlClassName } from "@/components/ui/Field";
@@ -12,12 +13,14 @@ import { UploadZone } from "@/components/ui/UploadZone";
 import { useToast } from "@/components/ui/Toast";
 import type { CitizenComplaintSummary } from "@/domains/complaints/constants";
 import { MAX_COMPLAINT_IMAGE_BYTES } from "@/domains/complaints/constants";
+import type { ComplaintCategory } from "@/domains/complaints/types";
 import { cn } from "@/lib/cn";
 
 type FormState = "idle" | "uploading" | "submitting" | "success" | "error";
 
 type FieldErrors = {
   photo?: string;
+  category?: string;
   description?: string;
   latitude?: string;
   longitude?: string;
@@ -26,6 +29,7 @@ type FieldErrors = {
 
 function clientValidate(input: {
   photo: File | null;
+  category: ComplaintCategory | null;
   description: string;
   latitude: string;
   longitude: string;
@@ -35,6 +39,9 @@ function clientValidate(input: {
     errors.photo = "Please add a photograph of the problem.";
   } else if (input.photo.size > MAX_COMPLAINT_IMAGE_BYTES) {
     errors.photo = "Photos must be 8 MB or smaller.";
+  }
+  if (!input.category) {
+    errors.category = "Please choose a complaint category.";
   }
   if (input.description.trim().length < 12) {
     errors.description = "Please describe the problem in at least 12 characters.";
@@ -55,6 +62,7 @@ export function ReportIssueForm() {
   const { toast } = useToast();
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [category, setCategory] = useState<ComplaintCategory | null>(null);
   const [description, setDescription] = useState("");
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
@@ -139,7 +147,13 @@ export function ReportIssueForm() {
       return;
     }
 
-    const errors = clientValidate({ photo, description, latitude, longitude });
+    const errors = clientValidate({
+      photo,
+      category,
+      description,
+      latitude,
+      longitude,
+    });
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       setFormState("error");
@@ -151,6 +165,7 @@ export function ReportIssueForm() {
 
     const body = new FormData();
     body.set("photo", photo as File);
+    body.set("category", category as string);
     body.set("description", description.trim());
     body.set("latitude", latitude.trim());
     body.set("longitude", longitude.trim());
@@ -203,6 +218,7 @@ export function ReportIssueForm() {
       URL.revokeObjectURL(photoPreview);
     }
     setPhotoPreview(null);
+    setCategory(null);
     setDescription("");
     setLatitude("");
     setLongitude("");
@@ -233,6 +249,20 @@ export function ReportIssueForm() {
         error={fieldErrors.photo}
         previewUrl={photoPreview}
         onFileChange={onPhotoChange}
+      />
+
+      <CategoryPicker
+        selectedCategory={category}
+        disabled={busy}
+        categoryError={fieldErrors.category}
+        onCategoryChange={(value) => {
+          setCategory(value);
+          setFieldErrors((current) => ({
+            ...current,
+            category: undefined,
+            form: undefined,
+          }));
+        }}
       />
 
       <Field

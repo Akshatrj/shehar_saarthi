@@ -27,7 +27,7 @@ export function PortalDashboardCharts({
 }: PortalDashboardChartsProps) {
   return (
     <div className="flex flex-col gap-4">
-      <Card className="p-5">
+      <Card className="rounded-lg p-5">
         <CardHeader>
           <CardTitle>Complaint trend</CardTitle>
           <CardDescription>
@@ -38,7 +38,7 @@ export function PortalDashboardCharts({
       </Card>
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <Card className="p-5">
+        <Card className="rounded-lg p-5">
           <CardHeader>
             <CardTitle>Pipeline mix</CardTitle>
             <CardDescription>
@@ -52,7 +52,7 @@ export function PortalDashboardCharts({
           />
         </Card>
 
-        <Card className="p-5">
+        <Card className="rounded-lg p-5">
           <CardHeader>
             <CardTitle>Issue categories</CardTitle>
             <CardDescription>
@@ -63,7 +63,7 @@ export function PortalDashboardCharts({
         </Card>
       </div>
 
-      <Card className="p-5">
+      <Card className="rounded-lg p-5">
         <CardHeader>
           <CardTitle>{distributionTitle}</CardTitle>
           <CardDescription>{distributionDescription}</CardDescription>

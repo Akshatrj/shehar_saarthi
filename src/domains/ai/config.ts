@@ -10,7 +10,7 @@ export function getGeminiApiKey() {
 }
 
 export function getGeminiModel() {
-  return process.env.GEMINI_MODEL?.trim() || "gemini-2.0-flash";
+  return process.env.GEMINI_MODEL?.trim() || "gemini-3.5-flash-lite";
 }
 
 export function getGeminiTimeoutMs() {

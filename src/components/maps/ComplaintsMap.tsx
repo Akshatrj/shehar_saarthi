@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ComplaintStatus } from "@/domains/complaints/types";
 import { COMPLAINT_CATEGORY_LABELS, COMPLAINT_STATUS_LABELS } from "@/domains/complaints/types";
 import type { MapComplaintPin } from "@/domains/complaints/dashboard-analytics";
@@ -79,10 +79,54 @@ export function ComplaintsMap({
   const mapRef = useRef<import("leaflet").Map | null>(null);
   const clusterRef = useRef<import("leaflet").MarkerClusterGroup | null>(null);
   const leafletRef = useRef<typeof import("leaflet") | null>(null);
+  const [mapReady, setMapReady] = useState(false);
   const complaintsKey = useMemo(
     () => complaints.map((complaint) => `${complaint.id}:${complaint.status}`).join("|"),
     [complaints],
   );
+
+  const syncMarkers = useCallback(() => {
+    const map = mapRef.current;
+    const clusterGroup = clusterRef.current;
+    const L = leafletRef.current;
+    if (!map || !clusterGroup || !L) {
+      return;
+    }
+
+    clusterGroup.clearLayers();
+
+    const bounds = L.latLngBounds([]);
+
+    for (const complaint of complaints) {
+      const latLng = L.latLng(complaint.latitude, complaint.longitude);
+      bounds.extend(latLng);
+
+      const marker = L.marker(latLng, {
+        icon: L.divIcon({
+          className: "ss-map-pin",
+          html: `<span class="ss-map-pin__hit"><span class="ss-map-pin__dot" style="background:${STATUS_PIN_COLORS[complaint.status]}"></span></span>`,
+          iconSize: L.point(44, 44),
+          iconAnchor: L.point(22, 22),
+        }),
+      });
+
+      marker.bindPopup(buildPopupHtml(complaint, detailPathPrefix, linkableDepartmentId), {
+        maxWidth: 280,
+      });
+      clusterGroup.addLayer(marker);
+    }
+
+    if (complaints.length === 1) {
+      map.setView(
+        [complaints[0]!.latitude, complaints[0]!.longitude],
+        DEFAULT_ZOOM,
+      );
+    } else if (complaints.length > 1) {
+      map.fitBounds(bounds.pad(0.12));
+    } else {
+      map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+    }
+  }, [complaints, detailPathPrefix, linkableDepartmentId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -133,6 +177,11 @@ export function ComplaintsMap({
       clusterRef.current = clusterGroup;
       map.addLayer(clusterGroup);
 
+      if (cancelled) {
+        return;
+      }
+
+      setMapReady(true);
       requestAnimationFrame(() => {
         map.invalidateSize();
       });
@@ -142,6 +191,7 @@ export function ComplaintsMap({
 
     return () => {
       cancelled = true;
+      setMapReady(false);
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
@@ -152,47 +202,26 @@ export function ComplaintsMap({
   }, []);
 
   useEffect(() => {
-    const map = mapRef.current;
-    const clusterGroup = clusterRef.current;
-    const L = leafletRef.current;
-    if (!map || !clusterGroup || !L) {
+    if (!mapReady) {
       return;
     }
 
-    clusterGroup.clearLayers();
+    syncMarkers();
+  }, [mapReady, complaintsKey, syncMarkers]);
 
-    const bounds = L.latLngBounds([]);
-
-    for (const complaint of complaints) {
-      const latLng = L.latLng(complaint.latitude, complaint.longitude);
-      bounds.extend(latLng);
-
-      const marker = L.marker(latLng, {
-        icon: L.divIcon({
-          className: "ss-map-pin",
-          html: `<span class="ss-map-pin__hit"><span class="ss-map-pin__dot" style="background:${STATUS_PIN_COLORS[complaint.status]}"></span></span>`,
-          iconSize: L.point(44, 44),
-          iconAnchor: L.point(22, 22),
-        }),
-      });
-
-      marker.bindPopup(buildPopupHtml(complaint, detailPathPrefix, linkableDepartmentId), {
-        maxWidth: 280,
-      });
-      clusterGroup.addLayer(marker);
+  useEffect(() => {
+    if (!mapReady || !containerRef.current) {
+      return;
     }
 
-    if (complaints.length === 1) {
-      map.setView(
-        [complaints[0]!.latitude, complaints[0]!.longitude],
-        DEFAULT_ZOOM,
-      );
-    } else if (complaints.length > 1) {
-      map.fitBounds(bounds.pad(0.12));
-    } else {
-      map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
-    }
-  }, [complaints, complaintsKey, detailPathPrefix, linkableDepartmentId]);
+    const container = containerRef.current;
+    const resizeObserver = new ResizeObserver(() => {
+      mapRef.current?.invalidateSize();
+    });
+
+    resizeObserver.observe(container);
+    return () => resizeObserver.disconnect();
+  }, [mapReady]);
 
   return (
     <div

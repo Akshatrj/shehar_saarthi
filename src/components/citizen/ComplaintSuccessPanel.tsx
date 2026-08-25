@@ -22,7 +22,8 @@ export function ComplaintSuccessPanel({
         <div>
           <h2 className="text-h2 text-navy">Complaint submitted successfully</h2>
           <p className="mt-2 text-body text-muted">
-            Your complaint has been registered and is now with the municipal team.
+            Your complaint has been registered. Our team will review the AI
+            routing recommendation and assign it to the right department.
           </p>
         </div>
       </div>

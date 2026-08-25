@@ -185,6 +185,7 @@ async function testValidUpload() {
   const photo = new File([tinyPng], "issue.png", { type: "image/png" });
   const created = await createCitizenComplaint(citizen, {
     photo,
+    category: "DAMAGED_FOOTPATH",
     description: "Broken footpath tile outside ward office entrance.",
     latitude: 28.6139,
     longitude: 77.209,
@@ -192,13 +193,15 @@ async function testValidUpload() {
 
   assert.ok(created.imageUrl.includes("blob.vercel-storage.com"));
   assert.equal(created.status, "SUBMITTED");
+  assert.equal(created.category, "DAMAGED_FOOTPATH");
 
-  const history = await prisma.complaintHistory.findFirst({
+  const history = await prisma.complaintHistory.findMany({
     where: { complaintId: created.id },
+    orderBy: { createdAt: "asc" },
   });
-  assert.ok(history);
-  assert.equal(history?.action, "SUBMITTED");
-  assert.equal(history?.newStatus, "SUBMITTED");
+  assert.ok(history.length >= 1);
+  assert.equal(history[0]?.action, "SUBMITTED");
+  assert.equal(history[0]?.newStatus, "SUBMITTED");
 
   await prisma.complaintHistory.deleteMany({ where: { complaintId: created.id } });
   await prisma.complaint.delete({ where: { id: created.id } });

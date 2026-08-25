@@ -3,7 +3,7 @@ import { ButtonLink } from "@/components/ui/Button";
 import { PaginationNav } from "@/components/ui/PaginationNav";
 import { Card } from "@/components/ui/Card";
 import { CitizenStatsGrid } from "@/components/citizen/CitizenStatsGrid";
-import { ComplaintListWithSearch } from "@/components/citizen/ComplaintListWithSearch";
+import { LazyComplaintListWithSearch } from "@/components/citizen/LazyComplaintListWithSearch";
 import {
   getCitizenComplaintStats,
   listCitizenComplaintsPage,
@@ -49,7 +49,7 @@ export default async function CitizenHomePage({ searchParams }: PageProps) {
             Search by ID or description, then open a complaint to view its timeline.
           </p>
         </div>
-        <ComplaintListWithSearch complaints={list.complaints} />
+        <LazyComplaintListWithSearch complaints={list.complaints} />
         <PaginationNav page={list.page} hasMore={list.hasMore} basePath="/citizen" />
       </Card>
     </div>

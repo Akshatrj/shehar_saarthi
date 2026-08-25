@@ -130,6 +130,8 @@ export async function analyzeComplaint(
       currentContextScore: context.score,
       recurringProblem: trends.recurringProblem,
       priorityReason: parsed.priorityReason,
+      classificationReason: parsed.classificationReason,
+      serviceType: parsed.serviceType,
       recommendedDepartment: mappedDepartment ?? parsed.recommendedDepartment,
       recommendedAction: parsed.recommendedAction,
       requiresManualReview: reviewRequired,

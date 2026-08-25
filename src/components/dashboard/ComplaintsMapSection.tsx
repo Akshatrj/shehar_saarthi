@@ -25,7 +25,7 @@ export function ComplaintsMapSection({
   mapTruncated,
 }: ComplaintsMapSectionProps) {
   return (
-    <Card className="p-5">
+    <Card className="overflow-hidden rounded-lg p-5">
       <CardHeader>
         <CardTitle>{title}</CardTitle>
         <CardDescription>{description}</CardDescription>

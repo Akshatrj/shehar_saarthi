@@ -5,10 +5,19 @@ export function Table({
   className,
   caption,
   children,
+  embedded = false,
   ...props
-}: HTMLAttributes<HTMLTableElement> & { caption?: string }) {
+}: HTMLAttributes<HTMLTableElement> & {
+  caption?: string;
+  embedded?: boolean;
+}) {
   return (
-    <div className="overflow-x-auto rounded-md border border-line bg-paper-raised">
+    <div
+      className={cn(
+        "overflow-x-auto",
+        !embedded && "rounded-md border border-line bg-paper-raised",
+      )}
+    >
       <table className={cn("w-full min-w-[40rem] text-left text-small", className)} {...props}>
         {caption ? <caption className="sr-only">{caption}</caption> : null}
         {children}
