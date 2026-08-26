@@ -48,6 +48,7 @@ export async function POST(request: Request) {
   const description = formData.get("description");
   const latitude = formData.get("latitude");
   const longitude = formData.get("longitude");
+  const phone = formData.get("phone");
 
   try {
     const complaint = await createCitizenComplaint(gate.user, {
@@ -56,6 +57,7 @@ export async function POST(request: Request) {
       description,
       latitude,
       longitude,
+      phone,
     });
     return jsonOk({ complaint }, 201);
   } catch (error) {

@@ -31,8 +31,7 @@ export function DepartmentWorkerTable({
   if (workers.length === 0) {
     return (
       <p className="text-small text-muted">
-        No workers are linked to this department yet. Ask a super admin to assign
-        the WORKER role.
+        No workers in this department yet. Add one with the form above.
       </p>
     );
   }

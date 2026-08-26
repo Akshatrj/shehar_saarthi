@@ -19,7 +19,7 @@ type PublicShellProps = {
 
 export function PublicShell({ children, actions }: PublicShellProps) {
   return (
-    <div className="flex min-h-dvh flex-col bg-paper">
+    <div className="flex min-h-dvh min-w-0 flex-col bg-paper">
       <SkipLink />
       <Navbar items={publicNavItems} actions={actions ?? <PublicNavActions />} />
       <main id="main-content" className="flex-1">

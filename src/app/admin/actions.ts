@@ -12,8 +12,9 @@ import {
   acceptRoutingRecommendation,
   assignDepartmentManually,
   autoRouteAllComplaints,
+  deleteAdminComplaint,
 } from "@/domains/admin/complaints";
-import { updateAdminUser } from "@/domains/admin/users";
+import { updateAdminUser, createAdminWorker } from "@/domains/admin/users";
 import { AdminError } from "@/domains/admin/auth";
 
 export type AdminActionResult =
@@ -56,6 +57,22 @@ export async function updateUserAction(
         isActive: formData.get("isActive"),
       }),
     ["/admin/users"],
+  );
+}
+
+export async function createWorkerAction(
+  formData: FormData,
+): Promise<AdminActionResult> {
+  return runAdminAction(
+    (actor) =>
+      createAdminWorker(actor, {
+        name: formData.get("name"),
+        email: formData.get("email"),
+        password: formData.get("password"),
+        confirmPassword: formData.get("confirmPassword"),
+        departmentId: formData.get("departmentId"),
+      }),
+    ["/admin/users", "/department-admin", "/department-admin/workers"],
   );
 }
 
@@ -133,6 +150,18 @@ export async function autoRouteAllAction(): Promise<AdminActionResult> {
     console.error("admin action failed", error);
     return failure("Action failed. Please try again.");
   }
+}
+
+export async function deleteComplaintAction(
+  complaintId: string,
+): Promise<AdminActionResult> {
+  if (!complaintId?.trim()) {
+    return failure("Complaint id is required.");
+  }
+  return runAdminAction(
+    (actor) => deleteAdminComplaint(actor, complaintId.trim()),
+    ["/admin/complaints", "/admin", "/department-admin", "/citizen"],
+  );
 }
 
 export async function overrideComplaintAction(

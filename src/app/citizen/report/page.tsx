@@ -8,14 +8,13 @@ export default function CitizenReportPage() {
       <PageHeader
         eyebrow="Citizen"
         title="Report an issue"
-        description="Upload a photograph, describe the problem, and share where it is located."
+        description="Pick a category, add a photo and description, then pin the location."
       />
-      <Card className="p-5 sm:p-6">
+      <Card className="p-4 sm:p-6">
         <CardHeader className="mb-4">
-          <CardTitle>Complaint details</CardTitle>
+          <CardTitle>New complaint</CardTitle>
           <CardDescription>
-            All fields are required. Your report is sent to the municipal team after
-            you sign in.
+            Three short steps. You do not need to know which department handles it.
           </CardDescription>
         </CardHeader>
         <LazyReportIssueForm />

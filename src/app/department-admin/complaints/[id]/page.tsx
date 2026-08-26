@@ -88,6 +88,11 @@ export default async function DepartmentAdminComplaintDetailPage({
                 ? COMPLAINT_CATEGORY_LABELS[complaint.category as ComplaintCategory]
                 : "—"}
             </p>
+            {complaint.contactPhone ? (
+              <p className="mt-2 text-small text-muted">
+                Contact phone: {complaint.contactPhone}
+              </p>
+            ) : null}
           </Card>
 
           <DepartmentAdminAiInsights complaint={complaint} />
@@ -98,6 +103,7 @@ export default async function DepartmentAdminComplaintDetailPage({
               <DepartmentAdminComplaintActions
                 complaintId={complaint.id}
                 status={complaint.status}
+                assignedWorkerId={complaint.assignedWorker?.id}
                 workers={workers}
               />
             </div>

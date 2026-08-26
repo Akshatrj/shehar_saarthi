@@ -1,11 +1,35 @@
 import NextAuth from "next-auth";
+import Credentials from "next-auth/providers/credentials";
 import { authConfig } from "@/lib/auth.config";
+import { authorizeCredentials } from "@/domains/auth/credentials";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
+  providers: [
+    ...authConfig.providers,
+    Credentials({
+      id: "credentials",
+      name: "Email and password",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      authorize: authorizeCredentials,
+    }),
+  ],
   callbacks: {
     ...authConfig.callbacks,
     async signIn({ user, account }) {
+      if (account?.provider === "credentials") {
+        if (!user.email) {
+          return false;
+        }
+        if (user.isActive === false) {
+          return "/login?error=inactive";
+        }
+        return true;
+      }
+
       if (account?.provider !== "google" || !user.email) {
         return false;
       }
@@ -27,12 +51,28 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       return true;
     },
-    async jwt({ token, user, trigger }) {
-      const { syncGoogleUser, loadUserByEmail } = await import(
-        "@/domains/auth/sync-user"
-      );
+    async jwt({ token, user, account, trigger }) {
+      const needsDatabase =
+        Boolean(user?.id || user?.email) || trigger === "update";
+      if (!needsDatabase) {
+        return token;
+      }
 
       try {
+        const { syncGoogleUser, loadUserByEmail } = await import(
+          "@/domains/auth/sync-user"
+        );
+
+        if (account?.provider === "credentials" && user?.id) {
+          token.sub = user.id;
+          token.userId = user.id;
+          token.email = user.email;
+          token.role = user.role ?? "CITIZEN";
+          token.departmentId = user.departmentId ?? null;
+          token.isActive = user.isActive !== false;
+          return token;
+        }
+
         if (user?.email) {
           const synced = await syncGoogleUser({
             email: user.email,

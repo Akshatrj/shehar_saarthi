@@ -8,9 +8,11 @@ export const COMPLAINT_HISTORY_ACTIONS = [
   "CATEGORY_CHANGED",
   "ASSIGNED_TO_SELF",
   "ASSIGNED_TO_WORKER",
+  "REASSIGNED_TO_WORKER",
   "STARTED_PROGRESS",
   "MARKED_COMPLETED",
   "CLOSED",
+  "REOPENED_BY_CITIZEN",
   "ADMIN_OVERRIDE",
 ] as const;
 
@@ -63,6 +65,7 @@ export type CitizenTimelineItem = {
 };
 
 export type CitizenComplaintDetail = CitizenComplaintSummary & {
+  contactPhone: string | null;
   aiCategory: string | null;
   aiDescription: string | null;
   department: {
@@ -88,6 +91,13 @@ export type CitizenComplaintStats = {
 };
 
 export const WORKER_PAGE_SIZE = 15;
+
+export const WORKER_STATUS_FILTERS = [
+  "ASSIGNED",
+  "IN_PROGRESS",
+  "COMPLETED",
+  "CLOSED",
+] as const;
 
 export type WorkerComplaintStats = {
   assigned: number;
@@ -145,6 +155,7 @@ export type WorkerComplaintDetail = {
   latitude: string;
   longitude: string;
   locationLabel: string | null;
+  contactPhone: string | null;
   createdAt: string;
   assignedWorkerId: string | null;
   department: {

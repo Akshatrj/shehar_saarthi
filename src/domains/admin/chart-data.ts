@@ -49,6 +49,50 @@ export type TrendDatum = {
   count: number;
 };
 
+const SHORT_MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+] as const;
+
+const CIVIC_TIME_ZONE = "Asia/Kolkata";
+
+function isoDateInTimeZone(value: Date, timeZone = CIVIC_TIME_ZONE) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(value);
+  const lookup = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${lookup.year}-${lookup.month}-${lookup.day}`;
+}
+
+function shiftIsoDate(isoDate: string, days: number) {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  const shifted = new Date(Date.UTC(year, (month ?? 1) - 1, (day ?? 1) + days));
+  return `${shifted.getUTCFullYear()}-${String(shifted.getUTCMonth() + 1).padStart(2, "0")}-${String(shifted.getUTCDate()).padStart(2, "0")}`;
+}
+
+export function trendDayLabel(isoDate: string) {
+  const [, month, day] = isoDate.split("-");
+  const monthIndex = Number(month) - 1;
+  const dayNumber = Number(day);
+  if (monthIndex < 0 || monthIndex > 11 || !Number.isFinite(dayNumber) || dayNumber < 1) {
+    return isoDate;
+  }
+  return `${dayNumber} ${SHORT_MONTHS[monthIndex]}`;
+}
+
 export function statusChartData(
   counts: Map<ComplaintStatus, number>,
 ): ChartDatum[] {
@@ -86,33 +130,22 @@ export function buildTrendSeries(
   rows: { createdAt: Date }[],
   days = 30,
 ): TrendDatum[] {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
+  const todayKey = isoDateInTimeZone(new Date());
   const buckets = new Map<string, number>();
   for (let offset = days - 1; offset >= 0; offset -= 1) {
-    const day = new Date(today);
-    day.setDate(today.getDate() - offset);
-    const key = day.toISOString().slice(0, 10);
-    buckets.set(key, 0);
+    buckets.set(shiftIsoDate(todayKey, -offset), 0);
   }
 
   for (const row of rows) {
-    const key = row.createdAt.toISOString().slice(0, 10);
+    const key = isoDateInTimeZone(row.createdAt);
     if (buckets.has(key)) {
       buckets.set(key, (buckets.get(key) ?? 0) + 1);
     }
   }
 
-  return Array.from(buckets.entries()).map(([date, count]) => {
-    const parsed = new Date(`${date}T00:00:00`);
-    return {
-      date,
-      label: parsed.toLocaleDateString("en-IN", {
-        month: "short",
-        day: "numeric",
-      }),
-      count,
-    };
-  });
+  return Array.from(buckets.entries()).map(([date, count]) => ({
+    date,
+    label: trendDayLabel(date),
+    count,
+  }));
 }

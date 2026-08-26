@@ -32,7 +32,7 @@ export function HeroLogoShowcase({ className }: HeroLogoShowcaseProps) {
     <div
       ref={stageRef}
       className={cn(
-        "ss-living-stage relative mx-auto flex w-full max-w-[19rem] flex-col items-center sm:max-w-[22rem]",
+        "ss-living-stage relative mx-auto flex w-full max-w-[16rem] flex-col items-center sm:max-w-[19rem] lg:max-w-[22rem]",
         className,
       )}
       aria-hidden="true"

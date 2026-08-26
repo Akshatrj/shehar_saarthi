@@ -11,6 +11,10 @@ function testAllowedTransitions() {
   assert.equal(canTransition("ASSIGNED", "IN_PROGRESS"), true);
   assert.equal(canTransition("IN_PROGRESS", "COMPLETED"), true);
   assert.equal(canTransition("COMPLETED", "CLOSED"), true);
+  assert.equal(canTransition("COMPLETED", "ASSIGNED"), true);
+  assert.equal(canTransition("COMPLETED", "ROUTED"), true);
+  assert.equal(canTransition("CLOSED", "ASSIGNED"), true);
+  assert.equal(canTransition("CLOSED", "ROUTED"), true);
 }
 
 function testBlockedTransitions() {

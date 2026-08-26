@@ -1,4 +1,5 @@
 import { ButtonLink } from "@/components/ui/Button";
+import { ChoiceTileStatic } from "@/components/ui/ChoiceTile";
 import { PUBLIC_REPORT_HREF } from "@/lib/public-routes";
 import { LandingHero } from "@/components/public/LandingHero";
 import { CategoryCard } from "@/components/public/CategoryCard";
@@ -16,8 +17,8 @@ function Section({
   className?: string;
 }) {
   return (
-    <section id={id} className={`scroll-mt-24 px-4 py-12 sm:py-16 ${className}`}>
-      <div className="mx-auto w-full max-w-6xl">{children}</div>
+    <section id={id} className={`scroll-mt-24 py-10 sm:py-14 lg:py-16 ${className}`}>
+      <div className="ss-container">{children}</div>
     </section>
   );
 }
@@ -33,7 +34,7 @@ export function LandingPage() {
           title="Everyday civic problems"
           description="Choose a category to get started. A photo and a location pin are enough for staff to act."
         />
-        <div className="ss-landing-stagger mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="ss-landing-stagger mt-8 grid gap-3 overflow-visible py-1 sm:mt-10 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
           {reportCategories.map((category) => (
             <CategoryCard key={category.id} category={category} />
           ))}
@@ -41,22 +42,20 @@ export function LandingPage() {
       </Section>
 
       <Section id="transparency" className="bg-brand-50">
-        <div className="grid gap-10 lg:grid-cols-2 lg:items-start">
+        <div className="grid gap-8 lg:grid-cols-2 lg:items-start lg:gap-10">
           <SectionIntro
             eyebrow="Open by default"
             title="Track every complaint"
             description="Each report receives a public reference. Follow status from submitted to closed, and confirm the work yourself."
           />
-          <div className="ss-category-card rounded-xl border border-brand-200 bg-paper-raised p-6 shadow-sm">
-            <h3 className="text-body font-semibold text-navy">
-              What stays private
-            </h3>
-            <p className="mt-2 max-w-prose text-body text-muted">
+          <ChoiceTileStatic className="ss-category-card p-6">
+            <span className="ss-choice-tile__title">What stays private</span>
+            <span className="ss-choice-tile__muted">
               Maps and field-facing views show the issue and the location. Your
               name, phone, and email stay with authorised municipal
               administrators. If a fix fails, you can reopen the complaint.
-            </p>
-          </div>
+            </span>
+          </ChoiceTileStatic>
         </div>
       </Section>
 
@@ -67,7 +66,7 @@ export function LandingPage() {
             Take a photo, drop a pin, and give your city a record it can act on.
           </p>
           <div className="mt-6 flex justify-center">
-            <ButtonLink href={PUBLIC_REPORT_HREF} size="lg" className="ss-btn-civic">
+            <ButtonLink href={PUBLIC_REPORT_HREF} size="lg" className="ss-btn-civic w-full sm:w-auto">
               Report an Issue
             </ButtonLink>
           </div>

@@ -1,5 +1,5 @@
 import { PortalPageSkeleton } from "@/components/dashboard/PortalPageSkeleton";
 
-export default function WorkerLoading() {
+export default function DepartmentAdminDeskLoading() {
   return <PortalPageSkeleton />;
 }

@@ -23,8 +23,6 @@ const nextConfig: NextConfig = {
     },
     middlewareClientMaxBodySize: "8mb",
     optimizePackageImports: [
-      "leaflet",
-      "leaflet.markercluster",
       "lucide-react",
       "next-auth",
       "next-auth/react",
@@ -59,7 +57,7 @@ const nextConfig: NextConfig = {
           {
             key: "Content-Security-Policy",
             value:
-              "base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.openstreetmap.org https://*.public.blob.vercel-storage.com",
+              "base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; connect-src 'self' https://nominatim.openstreetmap.org; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.openstreetmap.org https://*.basemaps.cartocdn.com https://basemaps.cartocdn.com https://*.cartocdn.com https://*.public.blob.vercel-storage.com",
           },
           { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
           {

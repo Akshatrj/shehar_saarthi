@@ -1,17 +1,13 @@
-import { Card } from "@/components/ui/Card";
+import {
+  CircleCheck,
+  ClipboardList,
+  FolderCheck,
+  Loader,
+  Route,
+  UserCheck,
+} from "lucide-react";
+import { StatCard } from "@/components/ui/StatCard";
 import type { DepartmentAdminComplaintStats } from "@/domains/complaints/constants";
-
-const statItems: Array<{
-  key: keyof DepartmentAdminComplaintStats;
-  label: string;
-}> = [
-  { key: "total", label: "Total" },
-  { key: "routed", label: "Routed" },
-  { key: "assigned", label: "Assigned" },
-  { key: "inProgress", label: "In progress" },
-  { key: "completed", label: "Completed" },
-  { key: "closed", label: "Closed" },
-];
 
 export function DepartmentAdminStatsGrid({
   stats,
@@ -19,13 +15,13 @@ export function DepartmentAdminStatsGrid({
   stats: DepartmentAdminComplaintStats;
 }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
-      {statItems.map((item) => (
-        <Card key={item.key} className="p-4">
-          <p className="text-small text-muted">{item.label}</p>
-          <p className="mt-1 text-h2 text-navy">{stats[item.key]}</p>
-        </Card>
-      ))}
+    <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
+      <StatCard label="Total" value={stats.total} icon={ClipboardList} tone="brand" />
+      <StatCard label="Routed" value={stats.routed} icon={Route} />
+      <StatCard label="Assigned" value={stats.assigned} icon={UserCheck} />
+      <StatCard label="In progress" value={stats.inProgress} icon={Loader} />
+      <StatCard label="Completed" value={stats.completed} icon={CircleCheck} tone="success" />
+      <StatCard label="Closed" value={stats.closed} icon={FolderCheck} />
     </div>
   );
 }

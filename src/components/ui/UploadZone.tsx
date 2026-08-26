@@ -4,12 +4,14 @@ import Image from "next/image";
 import { ImagePlus, X } from "lucide-react";
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { RequiredMark } from "@/components/ui/Field";
 import { cn } from "@/lib/cn";
 
 type UploadZoneProps = {
   accept?: string;
   disabled?: boolean;
   error?: string;
+  required?: boolean;
   maxSizeLabel?: string;
   previewUrl?: string | null;
   onFileChange: (file: File | null) => void;
@@ -19,6 +21,7 @@ export function UploadZone({
   accept = "image/jpeg,image/png,image/webp",
   disabled = false,
   error,
+  required = false,
   maxSizeLabel = "PNG, JPG or WebP up to 8 MB",
   previewUrl,
   onFileChange,
@@ -85,6 +88,7 @@ export function UploadZone({
             />
             <p className="mt-3 text-body font-medium text-navy">
               Upload complaint photo
+              {required ? <RequiredMark /> : null}
             </p>
             <p className="mt-1 text-small text-muted">{maxSizeLabel}</p>
             <label htmlFor={inputId} className="mt-4 inline-block">
@@ -101,6 +105,7 @@ export function UploadZone({
           accept={accept}
           capture="environment"
           disabled={disabled}
+          aria-required={required || undefined}
           className="sr-only"
           onChange={(event) => handleFiles(event.target.files)}
         />

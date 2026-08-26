@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { put } from "@vercel/blob";
+import { BlobNotFoundError, del, put } from "@vercel/blob";
 import type { AllowedComplaintImageMime } from "@/domains/complaints/constants";
 import { extensionForMime } from "@/domains/complaints/validation";
 
@@ -36,4 +36,29 @@ export async function uploadComplaintImage(input: {
   });
 
   return blob.url;
+}
+
+export async function deleteComplaintImage(urlOrPathname: string) {
+  if (!urlOrPathname.trim()) {
+    return;
+  }
+  if (!process.env.BLOB_READ_WRITE_TOKEN?.trim()) {
+    return;
+  }
+
+  const isBlobTarget =
+    urlOrPathname.includes("blob.vercel-storage.com") ||
+    urlOrPathname.startsWith("complaints/");
+  if (!isBlobTarget) {
+    return;
+  }
+
+  try {
+    await del(urlOrPathname);
+  } catch (error) {
+    if (error instanceof BlobNotFoundError) {
+      return;
+    }
+    console.warn("complaint image delete failed", error);
+  }
 }

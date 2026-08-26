@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { requireWorker } from "@/lib/auth/require";
 import {
-  assignComplaintToSelf,
   completeWorkerComplaint,
   requireWorkerContext,
   startComplaintProgress,
@@ -42,14 +41,6 @@ async function runWorkerAction(
     console.error("worker action failed", error);
     return failure("Could not update the complaint. Please try again.");
   }
-}
-
-export async function assignToSelf(
-  complaintId: string,
-): Promise<WorkerActionResult> {
-  return runWorkerAction(complaintId, (worker) =>
-    assignComplaintToSelf(worker, complaintId.trim()),
-  );
 }
 
 export async function startProgress(

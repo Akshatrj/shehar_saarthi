@@ -4,6 +4,7 @@ type FieldProps = {
   label: string;
   hint?: string;
   error?: string;
+  required?: boolean;
   htmlFor?: string;
   children: (ids: {
     id: string;
@@ -12,7 +13,25 @@ type FieldProps = {
   }) => ReactNode;
 };
 
-export function Field({ label, hint, error, htmlFor, children }: FieldProps) {
+export function RequiredMark() {
+  return (
+    <>
+      <span className="ml-0.5 text-danger" aria-hidden="true">
+        *
+      </span>
+      <span className="sr-only"> (required)</span>
+    </>
+  );
+}
+
+export function Field({
+  label,
+  hint,
+  error,
+  required = false,
+  htmlFor,
+  children,
+}: FieldProps) {
   const generatedId = useId();
   const id = htmlFor ?? generatedId;
   const hintId = hint ? `${id}-hint` : undefined;
@@ -23,6 +42,7 @@ export function Field({ label, hint, error, htmlFor, children }: FieldProps) {
     <div className="flex w-full flex-col gap-1">
       <label htmlFor={id} className="text-label font-medium text-green-950">
         {label}
+        {required ? <RequiredMark /> : null}
       </label>
       {children({ id, describedBy, invalid: Boolean(error) })}
       {hint && !error ? (

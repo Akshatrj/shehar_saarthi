@@ -1,5 +1,3 @@
-import sharp from "sharp";
-
 const MAX_AI_EDGE_PX = 1280;
 const MAX_AI_BYTES = 900_000;
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -35,6 +33,16 @@ function detectMime(bytes: Buffer): "image/jpeg" | "image/png" | "image/webp" | 
   return null;
 }
 
+async function loadSharp() {
+  try {
+    const mod = await import("sharp");
+    return mod.default;
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : "unknown error";
+    throw new Error(`Image optimizer is unavailable on this machine (${detail}).`);
+  }
+}
+
 export async function fetchAndOptimizeComplaintImage(
   imageUrl: string,
 ): Promise<OptimizedImage> {
@@ -52,6 +60,7 @@ export async function fetchAndOptimizeComplaintImage(
     throw new Error("Unsupported image format for AI analysis.");
   }
 
+  const sharp = await loadSharp();
   const metadata = await sharp(bytes).metadata();
   const width = metadata.width ?? 0;
   const height = metadata.height ?? 0;

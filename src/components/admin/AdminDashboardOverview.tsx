@@ -91,7 +91,7 @@ export function AdminDashboardMetrics({ stats }: { stats: AdminDashboardStats })
         title="People"
         description="Accounts across the municipal platform."
       >
-        <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
             label="Users"
             value={stats.totalUsers}
@@ -126,7 +126,7 @@ export function AdminDashboardMetrics({ stats }: { stats: AdminDashboardStats })
           title="Operations"
           description="Municipal structure and reported issues."
         >
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <StatCard
               label="Departments"
               value={stats.departments}
@@ -163,7 +163,7 @@ export function AdminDashboardMetrics({ stats }: { stats: AdminDashboardStats })
               style={{ width: `${resolvedShare}%` }}
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <StatCard
               label="Open"
               value={stats.openComplaints}

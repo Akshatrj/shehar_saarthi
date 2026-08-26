@@ -1,10 +1,3 @@
-import type { CategoryRoutingMetadata } from "@/domains/complaints/constants";
-import { DEPARTMENT_NAMES, type DepartmentSlug } from "@/domains/complaints/categories";
-import {
-  COMPLAINT_CATEGORY_LABELS,
-  type ComplaintCategory,
-} from "@/domains/complaints/types";
-
 export type CitizenTimelineItem = {
   id: string;
   label: string;
@@ -21,34 +14,37 @@ type HistoryEntry = {
   createdAt: string;
 };
 
-function parseRoutingMetadata(
-  metadata: string | null,
-): CategoryRoutingMetadata | null {
+const LABELS = {
+  submitted: "Complaint submitted",
+  verified: "Complaint verified",
+  inProgress: "In progress with department",
+  workerAssigned: "Worker assigned",
+  workerReady: "Worker is ready for job",
+  closed: "Complaint closed",
+  reopened: "Reopened",
+} as const;
+
+function parseReopenReason(metadata: string | null) {
   if (!metadata) {
-    return null;
-  }
-  try {
-    return JSON.parse(metadata) as CategoryRoutingMetadata;
-  } catch {
-    return null;
-  }
-}
-
-function departmentLabel(code: string | undefined) {
-  if (!code) {
-    return null;
-  }
-  return DEPARTMENT_NAMES[code as DepartmentSlug] ?? code;
-}
-
-function categoryLabel(category: string | undefined) {
-  if (!category) {
     return undefined;
   }
-  if (category in COMPLAINT_CATEGORY_LABELS) {
-    return COMPLAINT_CATEGORY_LABELS[category as ComplaintCategory];
+  try {
+    const parsed = JSON.parse(metadata) as { reason?: unknown };
+    if (typeof parsed.reason === "string" && parsed.reason.trim()) {
+      return parsed.reason.trim();
+    }
+  } catch {
+    return undefined;
   }
-  return category;
+  return undefined;
+}
+
+function isRoutedStatus(newStatus: string) {
+  return newStatus === "ROUTED";
+}
+
+function isAssignedStatus(newStatus: string) {
+  return newStatus === "ASSIGNED";
 }
 
 export function buildCitizenTimeline(input: {
@@ -56,152 +52,97 @@ export function buildCitizenTimeline(input: {
   aiCategory: string | null;
   aiDescription: string | null;
 }): CitizenTimelineItem[] {
+  const lastReopenIndex = input.history.reduce(
+    (last, entry, index) =>
+      entry.action === "REOPENED_BY_CITIZEN" ? index : last,
+    -1,
+  );
+  const segment =
+    lastReopenIndex >= 0
+      ? input.history.slice(lastReopenIndex)
+      : input.history;
+
   const items: CitizenTimelineItem[] = [];
+  const seen = new Set<string>();
 
-  for (const entry of input.history) {
-    if (entry.action === "SUBMITTED") {
-      items.push({
-        id: entry.id,
-        label: "Complaint submitted",
-        createdAt: entry.createdAt,
-      });
-
-      if (input.aiCategory) {
-        items.push({
-          id: `${entry.id}-ai`,
-          label: "AI category suggested",
-          detail: categoryLabel(input.aiCategory),
-          createdAt: entry.createdAt,
-        });
-      }
-      continue;
+  const push = (
+    label: string,
+    entry: HistoryEntry,
+    detail?: string,
+    id?: string,
+  ) => {
+    if (seen.has(label)) {
+      return;
     }
-
-    if (
-      entry.action === "ROUTING_RECOMMENDED" ||
-      entry.action === "AI_CLASSIFIED" ||
-      entry.action === "AUTO_ROUTED" ||
-      entry.action === "MANUALLY_ROUTED"
-    ) {
-      let detail: string | undefined;
-      if (entry.metadata) {
-        try {
-          const meta = JSON.parse(entry.metadata) as Record<string, unknown>;
-          if (typeof meta.reason === "string") {
-            detail = meta.reason;
-          }
-        } catch {
-          // ignore malformed metadata
-        }
-      }
-      items.push({
-        id: entry.id,
-        label:
-          entry.action === "ROUTING_RECOMMENDED"
-            ? "Routing recommendation generated"
-            : entry.action === "AI_CLASSIFIED"
-              ? "AI classified complaint"
-              : entry.action === "AUTO_ROUTED"
-                ? "Auto-routed to department"
-                : "Manually routed to department",
-        detail,
-        createdAt: entry.createdAt,
-      });
-      continue;
-    }
-
-    if (
-      entry.action === "CATEGORY_CONFIRMED" ||
-      entry.action === "CATEGORY_CHANGED"
-    ) {
-      const routing = parseRoutingMetadata(entry.metadata);
-      items.push({
-        id: `${entry.id}-category`,
-        label:
-          entry.action === "CATEGORY_CONFIRMED"
-            ? "Category confirmed"
-            : "Category changed",
-        detail: categoryLabel(routing?.category),
-        createdAt: entry.createdAt,
-      });
-
-      if (entry.newStatus === "ROUTED") {
-        const deptCode = routing?.departmentCode;
-        items.push({
-          id: `${entry.id}-routed`,
-          label: `Routed to ${departmentLabel(deptCode) ?? "department"}`,
-          createdAt: entry.createdAt,
-        });
-      }
-      continue;
-    }
-
-    if (
-      entry.action === "ASSIGNED_TO_SELF" ||
-      entry.action === "ASSIGNED_TO_WORKER"
-    ) {
-      items.push({
-        id: entry.id,
-        label: "Assigned to worker",
-        createdAt: entry.createdAt,
-      });
-      continue;
-    }
-
-    if (entry.action === "STARTED_PROGRESS") {
-      items.push({
-        id: entry.id,
-        label: "Work started",
-        createdAt: entry.createdAt,
-      });
-      continue;
-    }
-
-    if (entry.action === "MARKED_COMPLETED") {
-      items.push({
-        id: entry.id,
-        label: "Completed",
-        createdAt: entry.createdAt,
-      });
-      continue;
-    }
-
-    if (entry.action === "CLOSED") {
-      items.push({
-        id: entry.id,
-        label: "Closed",
-        createdAt: entry.createdAt,
-      });
-      continue;
-    }
-
-    if (entry.action === "ADMIN_OVERRIDE") {
-      items.push({
-        id: entry.id,
-        label: "Administrative correction",
-        createdAt: entry.createdAt,
-      });
-      continue;
-    }
-
+    seen.add(label);
     items.push({
-      id: entry.id,
-      label: entry.action
-        .toLowerCase()
-        .split("_")
-        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-        .join(" "),
+      id: id ?? entry.id,
+      label,
+      detail,
       createdAt: entry.createdAt,
     });
-  }
+  };
 
-  if (input.aiCategory && !input.history.some((entry) => entry.action === "SUBMITTED")) {
-    items.unshift({
-      id: "ai-suggestion",
-      label: "AI category suggested",
-      detail: categoryLabel(input.aiCategory),
-      createdAt: input.history[0]?.createdAt ?? new Date().toISOString(),
-    });
+  for (const entry of segment) {
+    const { action, newStatus } = entry;
+
+    if (action === "SUBMITTED") {
+      push(LABELS.submitted, entry);
+      continue;
+    }
+
+    if (action === "REOPENED_BY_CITIZEN") {
+      push(LABELS.reopened, entry, parseReopenReason(entry.metadata));
+      if (isRoutedStatus(newStatus)) {
+        push(LABELS.inProgress, entry, undefined, `${entry.id}-dept`);
+      } else if (isAssignedStatus(newStatus)) {
+        push(LABELS.workerAssigned, entry, undefined, `${entry.id}-assigned`);
+      }
+      continue;
+    }
+
+    if (
+      action === "AI_CLASSIFIED" ||
+      action === "CATEGORY_CONFIRMED" ||
+      action === "CATEGORY_CHANGED" ||
+      action === "ADMIN_OVERRIDE"
+    ) {
+      push(LABELS.verified, entry);
+    }
+
+    if (action === "AUTO_ROUTED" || action === "MANUALLY_ROUTED") {
+      push(LABELS.verified, entry, undefined, `${entry.id}-verified`);
+      if (isRoutedStatus(newStatus)) {
+        push(LABELS.inProgress, entry, undefined, `${entry.id}-dept`);
+      }
+      continue;
+    }
+
+    if (
+      (action === "CATEGORY_CONFIRMED" || action === "CATEGORY_CHANGED") &&
+      isRoutedStatus(newStatus)
+    ) {
+      push(LABELS.inProgress, entry, undefined, `${entry.id}-dept`);
+      continue;
+    }
+
+    if (
+      action === "ASSIGNED_TO_WORKER" ||
+      action === "ASSIGNED_TO_SELF" ||
+      action === "REASSIGNED_TO_WORKER"
+    ) {
+      push(LABELS.workerAssigned, entry);
+      continue;
+    }
+
+    if (action === "STARTED_PROGRESS") {
+      push(LABELS.workerReady, entry);
+      continue;
+    }
+
+    if (action === "MARKED_COMPLETED" || action === "CLOSED") {
+      push(LABELS.closed, entry);
+    }
   }
 
   return items;

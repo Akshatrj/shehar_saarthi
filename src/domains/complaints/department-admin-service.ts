@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/db";
 import type { AuthUser } from "@/lib/rbac";
 import {
+  createWorkerAccount,
+  WorkerAccountError,
+} from "@/domains/auth/create-worker";
+import {
   DEPARTMENT_ADMIN_PAGE_SIZE,
   type DepartmentAdminComplaintDetail,
   type DepartmentAdminComplaintListItem,
@@ -11,6 +15,10 @@ import {
   COMPLAINT_STATUSES,
   type ComplaintStatus,
 } from "@/domains/complaints/types";
+import {
+  ComplaintServiceError,
+  deleteComplaintAndStorage,
+} from "@/domains/complaints/service";
 import { assertValidTransition } from "@/domains/complaints/transitions";
 
 export class DepartmentAdminError extends Error {
@@ -156,6 +164,7 @@ export async function getDepartmentAdminComplaintDetail(
       latitude: true,
       longitude: true,
       locationLabel: true,
+      contactPhone: true,
       createdAt: true,
       department: {
         select: { id: true, name: true, code: true },
@@ -212,6 +221,7 @@ export async function getDepartmentAdminComplaintDetail(
     latitude: row.latitude.toString(),
     longitude: row.longitude.toString(),
     locationLabel: row.locationLabel,
+    contactPhone: row.contactPhone,
     createdAt: row.createdAt.toISOString(),
     department: row.department,
     assignedWorker: row.assignedWorker,
@@ -225,6 +235,28 @@ export async function getDepartmentAdminComplaintDetail(
       actor: entry.actor,
     })),
   };
+}
+
+export async function createDepartmentWorker(
+  admin: DepartmentAdminContext,
+  input: {
+    name: string;
+    email: string;
+    password: string;
+    confirmPassword: string;
+  },
+) {
+  try {
+    return await createWorkerAccount({
+      ...input,
+      departmentId: admin.departmentId,
+    });
+  } catch (error) {
+    if (error instanceof WorkerAccountError) {
+      throw new DepartmentAdminError(error.message);
+    }
+    throw error;
+  }
 }
 
 export async function listDepartmentWorkers(
@@ -271,7 +303,7 @@ export async function assignComplaintToWorker(
       departmentId: admin.departmentId,
       isActive: true,
     },
-    select: { id: true },
+    select: { id: true, name: true },
   });
 
   if (!worker) {
@@ -281,20 +313,32 @@ export async function assignComplaintToWorker(
   await prisma.$transaction(async (tx) => {
     const complaint = await tx.complaint.findFirst({
       where: { id: complaintId, departmentId: admin.departmentId },
-      select: { id: true, status: true },
+      select: { id: true, status: true, assignedWorkerId: true },
     });
 
     if (!complaint) {
       throw new DepartmentAdminError("Complaint not found.");
     }
 
-    if (complaint.status !== "ROUTED") {
+    const canAssign = complaint.status === "ROUTED";
+    const canReassign =
+      complaint.status === "ASSIGNED" || complaint.status === "IN_PROGRESS";
+
+    if (!canAssign && !canReassign) {
       throw new DepartmentAdminError(
-        "Only routed complaints can be assigned to a worker.",
+        "This complaint can only be assigned while it is with the department, assigned, or in progress.",
       );
     }
 
-    assertValidTransition(complaint.status, "ASSIGNED");
+    if (complaint.assignedWorkerId === worker.id) {
+      throw new DepartmentAdminError(
+        "This complaint is already assigned to that worker.",
+      );
+    }
+
+    if (canAssign) {
+      assertValidTransition(complaint.status, "ASSIGNED");
+    }
 
     await tx.complaint.update({
       where: { id: complaint.id },
@@ -308,10 +352,13 @@ export async function assignComplaintToWorker(
       data: {
         complaintId: complaint.id,
         actorId: admin.adminId,
-        action: "ASSIGNED_TO_WORKER",
-        oldStatus: "ROUTED",
+        action: canReassign ? "REASSIGNED_TO_WORKER" : "ASSIGNED_TO_WORKER",
+        oldStatus: complaint.status,
         newStatus: "ASSIGNED",
-        metadata: JSON.stringify({ workerId: worker.id }),
+        metadata: JSON.stringify({
+          workerId: worker.id,
+          previousWorkerId: complaint.assignedWorkerId,
+        }),
       },
     });
   });
@@ -354,6 +401,29 @@ export async function closeDepartmentComplaint(
       },
     });
   });
+}
+
+export async function deleteDepartmentComplaint(
+  admin: DepartmentAdminContext,
+  complaintId: string,
+) {
+  const complaint = await prisma.complaint.findFirst({
+    where: { id: complaintId, departmentId: admin.departmentId },
+    select: { id: true },
+  });
+
+  if (!complaint) {
+    throw new DepartmentAdminError("Complaint not found.");
+  }
+
+  try {
+    await deleteComplaintAndStorage(complaint.id);
+  } catch (error) {
+    if (error instanceof ComplaintServiceError) {
+      throw new DepartmentAdminError(error.message);
+    }
+    throw error;
+  }
 }
 
 export async function setDepartmentWorkerActive(

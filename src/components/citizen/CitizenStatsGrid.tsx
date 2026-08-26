@@ -1,3 +1,4 @@
+import { CheckCircle2, ClipboardList, Clock3, Loader } from "lucide-react";
 import { StatCard } from "@/components/ui/StatCard";
 import type { CitizenComplaintStats } from "@/domains/complaints/constants";
 
@@ -15,10 +16,31 @@ export function CitizenStatsGrid({ stats }: { stats: CitizenComplaintStats }) {
 
   return (
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      <StatCard label="Total complaints" value={total} />
-      <StatCard label="Pending" value={pending} hint="Submitted, routed, or assigned" />
-      <StatCard label="In progress" value={stats.inProgress} />
-      <StatCard label="Resolved" value={resolved} hint="Completed or closed" />
+      <StatCard
+        label="Total complaints"
+        value={total}
+        icon={ClipboardList}
+        tone="brand"
+      />
+      <StatCard
+        label="Pending"
+        value={pending}
+        hint="Submitted, routed, or assigned"
+        icon={Clock3}
+        tone="warning"
+      />
+      <StatCard
+        label="In progress"
+        value={stats.inProgress}
+        icon={Loader}
+      />
+      <StatCard
+        label="Resolved"
+        value={resolved}
+        hint="Completed or closed"
+        icon={CheckCircle2}
+        tone="success"
+      />
     </div>
   );
 }

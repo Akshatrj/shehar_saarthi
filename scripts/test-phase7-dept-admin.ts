@@ -6,9 +6,12 @@ import { prisma } from "@/lib/db";
 import {
   assignComplaintToWorker,
   closeDepartmentComplaint,
+  createDepartmentWorker,
+  DepartmentAdminError,
   listDepartmentAdminComplaints,
   requireDepartmentAdminContext,
 } from "@/domains/complaints/department-admin-service";
+import { getDashboardAnalytics } from "@/domains/complaints/dashboard-analytics";
 import type { AuthUser } from "@/lib/rbac";
 
 function loadEnvLocal() {
@@ -48,6 +51,12 @@ async function main() {
     select: { id: true },
   });
   assert.ok(roads, "roads department required");
+
+  const parks = await prisma.department.findFirst({
+    where: { code: "parks" },
+    select: { id: true },
+  });
+  assert.ok(parks, "parks department required");
 
   const admin: AuthUser = {
     id: randomUUID(),
@@ -104,21 +113,114 @@ async function main() {
   });
 
   const adminContext = requireDepartmentAdminContext(admin);
+
+  const createdWorker = await createDepartmentWorker(adminContext, {
+    name: "Desk Added Worker",
+    email: `desk-worker-${randomUUID()}@test.local`,
+    password: "citygate1",
+    confirmPassword: "citygate1",
+  });
+  assert.equal(createdWorker.role, "WORKER");
+  assert.equal(createdWorker.departmentId, roads.id);
+
+  try {
+    await createDepartmentWorker(adminContext, {
+      name: "Duplicate",
+      email: createdWorker.email,
+      password: "citygate1",
+      confirmPassword: "citygate1",
+    });
+    assert.fail("expected duplicate email to fail");
+  } catch (error) {
+    assert.ok(error instanceof DepartmentAdminError);
+  }
+
+  try {
+    await createDepartmentWorker(adminContext, {
+      name: "A",
+      email: `short-${randomUUID()}@test.local`,
+      password: "citygate1",
+      confirmPassword: "citygate1",
+    });
+    assert.fail("expected short name to fail");
+  } catch (error) {
+    assert.ok(error instanceof DepartmentAdminError);
+  }
+
+  const parksComplaint = await prisma.complaint.create({
+    data: {
+      publicRef: `SS-P-${Math.floor(Math.random() * 900000 + 100000)}`,
+      citizenId: citizen.id,
+      departmentId: parks.id,
+      description: "Parks only pin",
+      imageUrl: "https://example.com/parks.jpg",
+      latitude: 28.62,
+      longitude: 77.21,
+      status: "ROUTED",
+      category: "FALLEN_TREE",
+    },
+    select: { id: true },
+  });
+
   await assignComplaintToWorker(adminContext, complaint.id, worker.id);
+
+  try {
+    await assignComplaintToWorker(adminContext, complaint.id, worker.id);
+    assert.fail("expected assigning the same worker again to fail");
+  } catch (error) {
+    assert.ok(error instanceof DepartmentAdminError);
+  }
+
+  await assignComplaintToWorker(adminContext, complaint.id, createdWorker.id);
+  const reassigned = await prisma.complaint.findUnique({
+    where: { id: complaint.id },
+    select: { assignedWorkerId: true, status: true },
+  });
+  assert.equal(reassigned?.assignedWorkerId, createdWorker.id);
+  assert.equal(reassigned?.status, "ASSIGNED");
+
+  await prisma.complaint.update({
+    where: { id: complaint.id },
+    data: { status: "IN_PROGRESS" },
+  });
+  await assignComplaintToWorker(adminContext, complaint.id, worker.id);
+  const afterProgressReassign = await prisma.complaint.findUnique({
+    where: { id: complaint.id },
+    select: { assignedWorkerId: true, status: true },
+  });
+  assert.equal(afterProgressReassign?.assignedWorkerId, worker.id);
+  assert.equal(afterProgressReassign?.status, "ASSIGNED");
 
   await prisma.complaint.update({
     where: { id: complaint.id },
     data: { status: "COMPLETED" },
   });
 
+  try {
+    await assignComplaintToWorker(adminContext, complaint.id, createdWorker.id);
+    assert.fail("expected completed complaints to reject reassignment");
+  } catch (error) {
+    assert.ok(error instanceof DepartmentAdminError);
+  }
+
   await closeDepartmentComplaint(adminContext, complaint.id);
 
   const list = await listDepartmentAdminComplaints(roads.id, {});
   assert.ok(list.complaints.some((row) => row.id === complaint.id));
 
-  await prisma.complaint.delete({ where: { id: complaint.id } });
+  const roadsMap = await getDashboardAnalytics({ departmentId: roads.id });
+  assert.ok(roadsMap.mapComplaints.every((pin) => pin.departmentId === roads.id));
+  assert.ok(roadsMap.mapComplaints.some((pin) => pin.id === complaint.id));
+  assert.equal(
+    roadsMap.mapComplaints.some((pin) => pin.id === parksComplaint.id),
+    false,
+  );
+
+  await prisma.complaint.deleteMany({
+    where: { id: { in: [complaint.id, parksComplaint.id] } },
+  });
   await prisma.user.deleteMany({
-    where: { id: { in: [admin.id, worker.id, citizen.id] } },
+    where: { id: { in: [admin.id, worker.id, citizen.id, createdWorker.id] } },
   });
 
   console.log("phase7 department admin tests passed");

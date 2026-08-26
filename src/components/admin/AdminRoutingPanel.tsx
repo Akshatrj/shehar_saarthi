@@ -9,6 +9,7 @@ import {
 } from "@/app/admin/actions";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
+import { ChoiceTile } from "@/components/ui/ChoiceTile";
 import { Field } from "@/components/ui/Field";
 import { Select } from "@/components/ui/Select";
 import {
@@ -170,11 +171,28 @@ export function AdminRoutingPanel({
       {ranked.length > 0 ? (
         <div>
           <p className="text-small font-medium text-navy">Ranked departments</p>
-          <ol className="mt-2 space-y-2 text-small text-muted">
+          <ol className="mt-2 grid gap-2">
             {ranked.slice(0, 3).map((item: RankedDepartmentRecommendation, index) => (
               <li key={item.departmentId}>
-                {index + 1}. {item.departmentName}
-                {item.recommended ? " — Recommended" : ""}
+                <ChoiceTile
+                  selected={selectedDepartmentId === item.departmentId}
+                  disabled={isPending}
+                  onClick={() => {
+                    setSelectedDepartmentId(item.departmentId);
+                    setShowManual(true);
+                  }}
+                >
+                  <span>
+                    <span className="ss-choice-tile__title">
+                      {index + 1}. {item.departmentName}
+                    </span>
+                    <span className="ss-choice-tile__muted">
+                      {item.recommended
+                        ? "Recommended match for this category"
+                        : "Alternative department"}
+                    </span>
+                  </span>
+                </ChoiceTile>
               </li>
             ))}
           </ol>

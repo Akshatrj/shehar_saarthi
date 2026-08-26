@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusBadge } from "@/components/ui/StatusBadge";
@@ -37,41 +36,32 @@ export function ComplaintList({
   }
 
   return (
-    <ul className="grid gap-4 sm:grid-cols-2">
+    <ul className="divide-y divide-line overflow-hidden rounded-lg border border-line bg-paper-raised">
       {complaints.map((complaint) => (
         <li key={complaint.id}>
           <Link
             href={`/citizen/complaints/${complaint.id}`}
-            className="ss-category-card flex h-full flex-col overflow-hidden rounded-lg border border-line bg-paper-raised shadow-sm"
+            className="flex flex-col gap-1 px-4 py-3 transition-colors hover:bg-brand-50/70 sm:flex-row sm:items-center sm:gap-4"
           >
-            <div className="relative h-36 w-full bg-paper">
-              <Image
-                src={complaint.imageUrl}
-                alt=""
-                fill
-                sizes="(max-width: 640px) 100vw, 320px"
-                className="object-cover"
-              />
-            </div>
-            <div className="flex flex-1 flex-col gap-2 p-4">
+            <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-mono text-small font-semibold text-brand">
                   {complaint.publicRef}
                 </span>
                 <StatusBadge status={complaint.status as ComplaintStatus} />
+                {complaint.category ? (
+                  <span className="text-small text-muted">
+                    {COMPLAINT_CATEGORY_LABELS[complaint.category as ComplaintCategory]}
+                  </span>
+                ) : null}
               </div>
-              {complaint.category ? (
-                <p className="text-small font-medium text-muted">
-                  {COMPLAINT_CATEGORY_LABELS[complaint.category as ComplaintCategory]}
-                </p>
-              ) : null}
-              <p className="line-clamp-2 flex-1 text-body text-ink">
+              <p className="mt-1 line-clamp-1 text-small text-ink">
                 {complaint.description}
               </p>
-              <p className="text-small text-muted">
-                Submitted {formatDate(complaint.createdAt)}
-              </p>
             </div>
+            <p className="shrink-0 text-xs text-muted sm:text-right">
+              {formatDate(complaint.createdAt)}
+            </p>
           </Link>
         </li>
       ))}

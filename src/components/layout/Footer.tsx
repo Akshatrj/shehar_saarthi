@@ -12,7 +12,7 @@ const footerLinks = [
 export function Footer() {
   return (
     <footer className="border-t border-navy-light bg-navy text-white">
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 md:grid-cols-[1.1fr_1fr_1fr]">
+      <div className="ss-container grid gap-8 py-10 sm:gap-10 sm:py-12 md:grid-cols-[1.1fr_1fr_1fr]">
         <div className="flex flex-col gap-4">
           <Logo variant="lockup" href="/" surface="light" priority={false} />
           <p className="max-w-sm text-small leading-relaxed text-white/75">
@@ -61,8 +61,8 @@ export function Footer() {
           </div>
         </div>
       </div>
-      <div className="border-t border-white/10">
-        <p className="mx-auto max-w-6xl px-4 py-4 text-center text-xs text-white/60">
+      <div className="border-t border-white/10 pb-[env(safe-area-inset-bottom,0px)]">
+        <p className="ss-container py-4 text-center text-xs text-white/60">
           © {new Date().getFullYear()} Shehar Saarthi · Civic Issue Portal
         </p>
       </div>

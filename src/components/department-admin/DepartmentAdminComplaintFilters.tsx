@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { COMPLAINT_STATUSES, COMPLAINT_STATUS_LABELS } from "@/domains/complaints/types";
 import { cn } from "@/lib/cn";
+import { Button } from "@/components/ui/Button";
 import { controlClassName } from "@/components/ui/Field";
 
 export function DepartmentAdminComplaintFilters({
@@ -9,8 +10,8 @@ export function DepartmentAdminComplaintFilters({
   currentStatus?: string;
 }) {
   return (
-    <form className="flex flex-wrap items-end gap-3" method="get">
-      <div className="flex min-w-[12rem] flex-col gap-1">
+    <form className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end" method="get">
+      <div className="ss-filter-field">
         <label htmlFor="status" className="text-label font-medium text-navy">
           Status
         </label>
@@ -28,12 +29,9 @@ export function DepartmentAdminComplaintFilters({
           ))}
         </select>
       </div>
-      <button
-        type="submit"
-        className="inline-flex min-h-11 items-center rounded-md bg-orange px-4 text-small font-medium text-white"
-      >
+      <Button type="submit" size="sm" className="w-full sm:w-auto">
         Apply filter
-      </button>
+      </Button>
       {currentStatus ? (
         <Link href="/department-admin" className="text-small font-medium text-brand">
           Clear

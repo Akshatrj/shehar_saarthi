@@ -69,7 +69,7 @@ export default async function WorkerHomePage({ searchParams }: PageProps) {
       <PageHeader
         eyebrow="Worker"
         title="My assigned complaints"
-        description={`Signed in as ${user.name ?? user.email}. Pick up routed complaints or continue assigned work.`}
+        description={`Signed in as ${user.name ?? user.email}. Only complaints assigned to you appear here.`}
       />
 
       <WorkerStatsGrid stats={stats} />
@@ -80,15 +80,18 @@ export default async function WorkerHomePage({ searchParams }: PageProps) {
 
       <Card className="flex flex-col gap-4 p-5">
         <div className="flex flex-col gap-1">
-          <h2 className="text-h3 text-navy">Complaints</h2>
+          <h2 className="text-h3 text-navy">Assigned complaints</h2>
           <p className="text-small text-muted">
-            Routed complaints in your department can be self-assigned. Open a
-            complaint to update progress.
+            Your department admin assigns work to you. Open a complaint to start
+            or complete it.
           </p>
         </div>
 
         <WorkerComplaintFilters currentStatus={statusFilter} />
-        <WorkerComplaintTable complaints={list.complaints} />
+        <WorkerComplaintTable
+          complaints={list.complaints}
+          hasFilter={Boolean(statusFilter)}
+        />
         <PaginationNav
           page={list.page}
           hasMore={list.hasMore}

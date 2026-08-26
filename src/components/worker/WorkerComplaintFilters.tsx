@@ -1,6 +1,11 @@
 import Link from "next/link";
-import { COMPLAINT_STATUSES, COMPLAINT_STATUS_LABELS } from "@/domains/complaints/types";
+import {
+  COMPLAINT_STATUS_LABELS,
+  type ComplaintStatus,
+} from "@/domains/complaints/types";
+import { WORKER_STATUS_FILTERS } from "@/domains/complaints/constants";
 import { cn } from "@/lib/cn";
+import { Button } from "@/components/ui/Button";
 import { controlClassName } from "@/components/ui/Field";
 
 type WorkerComplaintFiltersProps = {
@@ -11,8 +16,8 @@ export function WorkerComplaintFilters({
   currentStatus,
 }: WorkerComplaintFiltersProps) {
   return (
-    <form className="flex flex-wrap items-end gap-3" method="get">
-      <div className="flex min-w-[12rem] flex-col gap-1">
+    <form className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end" method="get">
+      <div className="ss-filter-field">
         <label htmlFor="status" className="text-label font-medium text-green-950">
           Status
         </label>
@@ -22,20 +27,17 @@ export function WorkerComplaintFilters({
           defaultValue={currentStatus ?? ""}
           className={cn(controlClassName, "border-line")}
         >
-          <option value="">All statuses</option>
-          {COMPLAINT_STATUSES.map((status) => (
+          <option value="">All assigned</option>
+          {WORKER_STATUS_FILTERS.map((status) => (
             <option key={status} value={status}>
-              {COMPLAINT_STATUS_LABELS[status]}
+              {COMPLAINT_STATUS_LABELS[status as ComplaintStatus]}
             </option>
           ))}
         </select>
       </div>
-      <button
-        type="submit"
-        className="inline-flex min-h-11 items-center rounded-md bg-orange px-4 text-small font-medium text-white"
-      >
+      <Button type="submit" size="sm" className="w-full sm:w-auto">
         Apply filter
-      </button>
+      </Button>
       {currentStatus ? (
         <Link href="/worker" className="text-small font-medium text-brand">
           Clear

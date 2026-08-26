@@ -20,6 +20,8 @@ import {
 
 import { AdminError, ADMIN_PAGE_SIZE, assertSuperAdmin } from "@/domains/admin/auth";
 
+import { ComplaintServiceError, deleteComplaintAndStorage } from "@/domains/complaints/service";
+
 import { assertValidTransition } from "@/domains/complaints/transitions";
 
 import type { RankedDepartmentRecommendation } from "@/domains/routing/types";
@@ -75,6 +77,8 @@ export type AdminComplaintDetail = AdminComplaintRow & {
   longitude: string;
 
   locationLabel: string | null;
+
+  contactPhone: string | null;
 
   citizen: { id: string; name: string; email: string };
 
@@ -383,6 +387,8 @@ export async function getAdminComplaintDetail(
 
       locationLabel: true,
 
+      contactPhone: true,
+
       citizen: {
 
         select: { id: true, name: true, email: true },
@@ -436,6 +442,8 @@ export async function getAdminComplaintDetail(
     longitude: row.longitude.toString(),
 
     locationLabel: row.locationLabel,
+
+    contactPhone: row.contactPhone,
 
     citizen: row.citizen,
 
@@ -992,6 +1000,19 @@ export async function overrideAdminComplaint(
 }
 
 
+
+export async function deleteAdminComplaint(actor: AuthUser, complaintId: string) {
+  assertSuperAdmin(actor);
+
+  try {
+    await deleteComplaintAndStorage(complaintId);
+  } catch (error) {
+    if (error instanceof ComplaintServiceError) {
+      throw new AdminError(error.message);
+    }
+    throw error;
+  }
+}
 
 /** @deprecated Use acceptRoutingRecommendation instead */
 

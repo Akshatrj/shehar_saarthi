@@ -24,19 +24,23 @@ function formatDate(value: string) {
 
 export function WorkerComplaintTable({
   complaints,
+  hasFilter = false,
 }: {
   complaints: WorkerComplaintListItem[];
+  hasFilter?: boolean;
 }) {
   if (complaints.length === 0) {
     return (
       <p className="rounded-md border border-dashed border-line px-4 py-8 text-center text-small text-muted">
-        No complaints match the current filter.
+        {hasFilter
+          ? "No assigned complaints match this filter."
+          : "No complaints are assigned to you yet."}
       </p>
     );
   }
 
   return (
-    <Table caption="Worker complaints">
+    <Table caption="Assigned complaints">
       <TableHeader>
         <TableRow>
           <TableHead>ID</TableHead>
@@ -44,7 +48,6 @@ export function WorkerComplaintTable({
           <TableHead>Description</TableHead>
           <TableHead>Status</TableHead>
           <TableHead>Submitted</TableHead>
-          <TableHead>Assigned worker</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -68,7 +71,6 @@ export function WorkerComplaintTable({
               <StatusBadge status={complaint.status as ComplaintStatus} />
             </TableCell>
             <TableCell>{formatDate(complaint.createdAt)}</TableCell>
-            <TableCell>{complaint.assignedWorker?.name ?? "Unassigned"}</TableCell>
           </TableRow>
         ))}
       </TableBody>

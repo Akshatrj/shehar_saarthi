@@ -10,7 +10,7 @@ export function CitizenDashboardSkeleton() {
         <Skeleton className="h-4 w-96 max-w-full" />
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }, (_, index) => (
           <Card key={index} className="ss-stat-card p-4">
             <Skeleton className="h-4 w-24" />

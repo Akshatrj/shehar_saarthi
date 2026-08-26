@@ -4,11 +4,18 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ComplaintStatus } from "@/domains/complaints/types";
 import { COMPLAINT_CATEGORY_LABELS, COMPLAINT_STATUS_LABELS } from "@/domains/complaints/types";
 import type { MapComplaintPin } from "@/domains/complaints/dashboard-analytics";
+import {
+  DEFAULT_MAP_CENTER,
+  addStreetTiles,
+  clearLeafletId,
+  enableWheelZoomOnFocus,
+  refreshMapSize,
+  waitForMapSize,
+} from "@/components/maps/leaflet-setup";
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 
-const DEFAULT_CENTER: [number, number] = [28.6139, 77.209];
 const DEFAULT_ZOOM = 12;
 
 const STATUS_PIN_COLORS: Record<ComplaintStatus, string> = {
@@ -124,7 +131,7 @@ export function ComplaintsMap({
     } else if (complaints.length > 1) {
       map.fitBounds(bounds.pad(0.12));
     } else {
-      map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+      map.setView(DEFAULT_MAP_CENTER, DEFAULT_ZOOM);
     }
   }, [complaints, detailPathPrefix, linkableDepartmentId]);
 
@@ -132,7 +139,13 @@ export function ComplaintsMap({
     let cancelled = false;
 
     async function initMap() {
-      if (!containerRef.current || mapRef.current) {
+      const container = containerRef.current;
+      if (!container || mapRef.current) {
+        return;
+      }
+
+      await waitForMapSize(container, () => cancelled);
+      if (cancelled || !containerRef.current) {
         return;
       }
 
@@ -150,17 +163,16 @@ export function ComplaintsMap({
         return;
       }
 
-      const map = L.map(containerRef.current, {
-        scrollWheelZoom: true,
+      const host = containerRef.current;
+      clearLeafletId(host);
+
+      const map = L.map(host, {
+        scrollWheelZoom: false,
         zoomControl: true,
       });
       mapRef.current = map;
-
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-        maxZoom: 19,
-      }).addTo(map);
+      enableWheelZoomOnFocus(map);
+      addStreetTiles(L, map, () => cancelled);
 
       const clusterGroup = L.markerClusterGroup({
         showCoverageOnHover: false,
@@ -181,10 +193,8 @@ export function ComplaintsMap({
         return;
       }
 
+      refreshMapSize(map, () => cancelled);
       setMapReady(true);
-      requestAnimationFrame(() => {
-        map.invalidateSize();
-      });
     }
 
     void initMap();
@@ -229,7 +239,9 @@ export function ComplaintsMap({
       aria-label="Complaint locations map"
       role="region"
     >
-      <div ref={containerRef} className="ss-map h-[420px] w-full rounded-md" />
+      <div className="h-[min(22rem,70dvh)] overflow-hidden rounded-md sm:h-[420px]">
+        <div ref={containerRef} className="ss-map h-full w-full" />
+      </div>
       {mapTotalCount === 0 ? (
         <p className="mt-3 text-small text-muted">
           No complaints with location data yet. New reports will appear here automatically.

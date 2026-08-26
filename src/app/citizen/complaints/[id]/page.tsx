@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CategoryConfirmationPanel } from "@/components/citizen/CategoryConfirmationPanel";
+import { CitizenCancelComplaintButton } from "@/components/citizen/CitizenCancelComplaintButton";
+import { CitizenReopenComplaintForm } from "@/components/citizen/CitizenReopenComplaintForm";
 import { ComplaintPhoto } from "@/components/complaints/ComplaintPhoto";
 import { ComplaintTimeline } from "@/components/citizen/ComplaintTimeline";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { getCitizenComplaintDetail } from "@/domains/complaints/citizen-tracking";
+import { canCitizenCancelComplaint, canCitizenReopenComplaint } from "@/domains/complaints/service";
 import { requireCitizen } from "@/lib/auth/require";
 import {
   COMPLAINT_CATEGORY_LABELS,
@@ -70,7 +72,7 @@ export default async function CitizenComplaintDetailPage({ params }: PageProps) 
             <p className="mt-2 text-body text-ink">
               {complaint.category
                 ? COMPLAINT_CATEGORY_LABELS[complaint.category as ComplaintCategory]
-                : "Pending confirmation"}
+                : "Not specified"}
             </p>
 
             {complaint.status !== "SUBMITTED" && complaint.aiCategory ? (
@@ -100,20 +102,36 @@ export default async function CitizenComplaintDetailPage({ params }: PageProps) 
               {complaint.latitude}, {complaint.longitude}
             </p>
 
+            {complaint.contactPhone ? (
+              <>
+                <h2 className="mt-4 text-h3 text-navy">Contact phone</h2>
+                <p className="mt-2 text-body text-ink">{complaint.contactPhone}</p>
+              </>
+            ) : null}
+
             <h2 className="mt-4 text-h3 text-navy">Submitted</h2>
             <p className="mt-2 text-body text-ink">
               {formatDate(complaint.createdAt)}
             </p>
-          </Card>
 
-          {complaint.status === "SUBMITTED" ? (
-            <Card className="p-5">
-              <h2 className="text-h3 text-navy">Confirm category</h2>
-              <div className="mt-4">
-                <CategoryConfirmationPanel complaint={complaint} />
+            {canCitizenCancelComplaint(complaint.status) ? (
+              <div className="mt-5 border-t border-line pt-4">
+                <CitizenCancelComplaintButton complaintId={complaint.id} />
               </div>
-            </Card>
-          ) : null}
+            ) : null}
+
+            {canCitizenReopenComplaint(complaint.status) ? (
+              <div className="mt-5 border-t border-line pt-4">
+                <h2 className="text-h3 text-navy">Not satisfied?</h2>
+                <div className="mt-3">
+                  <CitizenReopenComplaintForm
+                    complaintId={complaint.id}
+                    status={complaint.status}
+                  />
+                </div>
+              </div>
+            ) : null}
+          </Card>
         </div>
       </div>
 

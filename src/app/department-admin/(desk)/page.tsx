@@ -98,7 +98,7 @@ export default async function DepartmentAdminHomePage({
         <div className="flex flex-col gap-1">
           <h2 className="text-h3 text-navy">Complaints</h2>
           <p className="text-small text-muted">
-            Assign routed complaints to workers and close completed work.
+            Assign routed complaints, reassign workers, and close completed work.
           </p>
         </div>
 

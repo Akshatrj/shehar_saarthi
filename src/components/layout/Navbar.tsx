@@ -25,8 +25,8 @@ export function Navbar({
 
   return (
     <NavbarFrame>
-      <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5">
-        <Logo compact={compactLogo} />
+      <div className="ss-container flex items-center gap-2 py-2.5 sm:gap-3">
+        <Logo compact={compactLogo} className="min-w-0 shrink" />
         {hasItems ? (
           <nav
             aria-label="Primary"
@@ -46,12 +46,7 @@ export function Navbar({
           )}
         >
           {actions}
-          {hasItems ? (
-            <MobileNav
-              items={items}
-              accountItem={{ href: "/login", label: "Sign in" }}
-            />
-          ) : null}
+          {hasItems ? <MobileNav items={items} /> : null}
         </div>
       </div>
     </NavbarFrame>

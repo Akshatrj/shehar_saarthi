@@ -17,10 +17,10 @@ export function AuthenticatedShell({
   user,
 }: AuthenticatedShellProps) {
   return (
-    <div className="flex min-h-dvh flex-col bg-paper">
+    <div className="flex min-h-dvh min-w-0 flex-col bg-paper">
       <SkipLink />
       <AuthHeader user={user} />
-      <main id="main-content" className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
+      <main id="main-content" className="ss-container min-w-0 flex-1 py-5 sm:py-8 lg:py-10">
         {children}
       </main>
     </div>

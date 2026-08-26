@@ -5,6 +5,8 @@ import { requireDepartmentAdmin } from "@/lib/auth/require";
 import {
   assignComplaintToWorker,
   closeDepartmentComplaint,
+  createDepartmentWorker,
+  deleteDepartmentComplaint,
   requireDepartmentAdminContext,
   setDepartmentWorkerActive,
   DepartmentAdminError,
@@ -22,8 +24,10 @@ function failure(message: string): DepartmentAdminActionResult {
 function revalidateDepartmentPaths(complaintId?: string) {
   revalidatePath("/department-admin");
   revalidatePath("/department-admin/workers");
+  revalidatePath("/worker");
   if (complaintId) {
     revalidatePath(`/department-admin/complaints/${complaintId}`);
+    revalidatePath(`/worker/complaints/${complaintId}`);
   }
 }
 
@@ -71,6 +75,18 @@ export async function closeComplaint(
   );
 }
 
+export async function deleteComplaint(
+  complaintId: string,
+): Promise<DepartmentAdminActionResult> {
+  if (!complaintId?.trim()) {
+    return failure("Complaint id is required.");
+  }
+  return runAdminAction(
+    (admin) => deleteDepartmentComplaint(admin, complaintId.trim()),
+    complaintId.trim(),
+  );
+}
+
 export async function deactivateWorker(
   workerId: string,
 ): Promise<DepartmentAdminActionResult> {
@@ -91,4 +107,21 @@ export async function activateWorker(
   return runAdminAction((admin) =>
     setDepartmentWorkerActive(admin, workerId.trim(), true),
   );
+}
+
+export async function createWorker(
+  formData: FormData,
+): Promise<DepartmentAdminActionResult> {
+  const result = await runAdminAction(async (admin) => {
+    await createDepartmentWorker(admin, {
+      name: String(formData.get("name") ?? ""),
+      email: String(formData.get("email") ?? ""),
+      password: String(formData.get("password") ?? ""),
+      confirmPassword: String(formData.get("confirmPassword") ?? ""),
+    });
+  });
+  if (result.ok) {
+    revalidatePath("/admin/users");
+  }
+  return result;
 }

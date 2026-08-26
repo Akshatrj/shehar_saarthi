@@ -1,8 +1,10 @@
+import { Suspense } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { ButtonLink } from "@/components/ui/Button";
 import { PaginationNav } from "@/components/ui/PaginationNav";
 import { Card } from "@/components/ui/Card";
 import { CitizenStatsGrid } from "@/components/citizen/CitizenStatsGrid";
+import { ComplaintCanceledBanner } from "@/components/citizen/ComplaintCanceledBanner";
 import { LazyComplaintListWithSearch } from "@/components/citizen/LazyComplaintListWithSearch";
 import {
   getCitizenComplaintStats,
@@ -40,13 +42,18 @@ export default async function CitizenHomePage({ searchParams }: PageProps) {
         }
       />
 
+      <Suspense fallback={null}>
+        <ComplaintCanceledBanner />
+      </Suspense>
+
       <CitizenStatsGrid stats={stats} />
 
-      <Card className="flex flex-col gap-4 p-5">
+      <Card className="flex flex-col gap-3 p-4 sm:p-5">
         <div>
           <h2 className="text-h3 text-navy">Recent complaints</h2>
           <p className="mt-1 text-small text-muted">
-            Search by ID or description, then open a complaint to view its timeline.
+            Search by ID or description. Open a complaint to see the photo and
+            timeline.
           </p>
         </div>
         <LazyComplaintListWithSearch complaints={list.complaints} />

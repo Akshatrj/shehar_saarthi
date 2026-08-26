@@ -2,14 +2,12 @@ import { prisma } from "@/lib/db";
 import type { AuthUser } from "@/lib/rbac";
 import {
   WORKER_PAGE_SIZE,
+  WORKER_STATUS_FILTERS,
   type WorkerComplaintDetail,
   type WorkerComplaintListItem,
   type WorkerComplaintStats,
 } from "@/domains/complaints/constants";
-import {
-  COMPLAINT_STATUSES,
-  type ComplaintStatus,
-} from "@/domains/complaints/types";
+import type { ComplaintStatus } from "@/domains/complaints/types";
 import { assertValidTransition } from "@/domains/complaints/transitions";
 
 export class WorkerComplaintError extends Error {
@@ -46,7 +44,11 @@ export function parseWorkerStatusFilter(
     return undefined;
   }
   const normalized = value.trim().toUpperCase();
-  if (!COMPLAINT_STATUSES.includes(normalized as ComplaintStatus)) {
+  if (
+    !WORKER_STATUS_FILTERS.includes(
+      normalized as (typeof WORKER_STATUS_FILTERS)[number],
+    )
+  ) {
     throw new WorkerComplaintError("Invalid status filter.");
   }
   return normalized as ComplaintStatus;
@@ -81,10 +83,7 @@ export async function getWorkerComplaintStats(
 function workerComplaintWhere(worker: WorkerContext) {
   return {
     departmentId: worker.departmentId,
-    OR: [
-      { assignedWorkerId: worker.workerId },
-      { status: "ROUTED" as const, assignedWorkerId: null },
-    ],
+    assignedWorkerId: worker.workerId,
   };
 }
 
@@ -165,6 +164,7 @@ export async function getWorkerComplaintDetail(
       latitude: true,
       longitude: true,
       locationLabel: true,
+      contactPhone: true,
       createdAt: true,
       assignedWorkerId: true,
       department: {
@@ -222,6 +222,7 @@ export async function getWorkerComplaintDetail(
     latitude: row.latitude.toString(),
     longitude: row.longitude.toString(),
     locationLabel: row.locationLabel,
+    contactPhone: row.contactPhone,
     createdAt: row.createdAt.toISOString(),
     assignedWorkerId: row.assignedWorkerId,
     department: row.department,
@@ -236,48 +237,6 @@ export async function getWorkerComplaintDetail(
       actor: entry.actor,
     })),
   };
-}
-
-export async function assignComplaintToSelf(
-  worker: WorkerContext,
-  complaintId: string,
-) {
-  await prisma.$transaction(async (tx) => {
-    const complaint = await tx.complaint.findFirst({
-      where: {
-        id: complaintId,
-        departmentId: worker.departmentId,
-        status: "ROUTED",
-      },
-      select: { id: true, status: true },
-    });
-
-    if (!complaint) {
-      throw new WorkerComplaintError(
-        "Only routed complaints in your department can be self-assigned.",
-      );
-    }
-
-    assertValidTransition(complaint.status, "ASSIGNED");
-
-    await tx.complaint.update({
-      where: { id: complaint.id },
-      data: {
-        assignedWorkerId: worker.workerId,
-        status: "ASSIGNED",
-      },
-    });
-
-    await tx.complaintHistory.create({
-      data: {
-        complaintId: complaint.id,
-        actorId: worker.workerId,
-        action: "ASSIGNED_TO_SELF",
-        oldStatus: "ROUTED",
-        newStatus: "ASSIGNED",
-      },
-    });
-  });
 }
 
 export async function startComplaintProgress(

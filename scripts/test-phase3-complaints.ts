@@ -9,6 +9,7 @@ import {
   validateComplaintDescription,
   validateComplaintImage,
   validateCoordinate,
+  validateOptionalContactPhone,
 } from "@/domains/complaints/validation";
 import type { AuthUser } from "@/lib/rbac";
 
@@ -82,6 +83,16 @@ async function testValidation() {
       ),
     "8 mb",
   );
+
+  assertThrows(
+    () => validateOptionalContactPhone("12345"),
+    "10-digit",
+  );
+  assert.equal(validateOptionalContactPhone(""), null);
+  assert.equal(validateOptionalContactPhone("   "), null);
+  assert.equal(validateOptionalContactPhone("9876543210"), "9876543210");
+  assert.equal(validateOptionalContactPhone("+919876543210"), "+919876543210");
+  assert.equal(validateOptionalContactPhone("+91 98765-43210"), "+919876543210");
 
   assertThrows(() => validateCoordinate("120", "latitude"), "between -90 and 90");
   assertThrows(() => validateCoordinate("abc", "longitude"), "valid number");

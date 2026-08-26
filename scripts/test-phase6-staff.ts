@@ -4,14 +4,16 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { prisma } from "@/lib/db";
 import {
-  assignComplaintToSelf,
   completeWorkerComplaint,
   getWorkerComplaintDetail,
   listWorkerComplaints,
   requireWorkerContext,
   startComplaintProgress,
-  WorkerComplaintError,
 } from "@/domains/complaints/worker-service";
+import {
+  assignComplaintToWorker,
+  requireDepartmentAdminContext,
+} from "@/domains/complaints/department-admin-service";
 import type { AuthUser } from "@/lib/rbac";
 
 function loadEnvLocal() {
@@ -72,6 +74,22 @@ async function main() {
     departmentId: electrical.id,
     isActive: true,
   };
+  const otherRoadsWorker: AuthUser = {
+    id: randomUUID(),
+    email: `worker-roads-b-${randomUUID()}@test.local`,
+    name: "Other Roads Worker",
+    role: "WORKER",
+    departmentId: roads.id,
+    isActive: true,
+  };
+  const roadsAdmin: AuthUser = {
+    id: randomUUID(),
+    email: `roads-admin-${randomUUID()}@test.local`,
+    name: "Roads Admin",
+    role: "DEPARTMENT_ADMIN",
+    departmentId: roads.id,
+    isActive: true,
+  };
 
   await prisma.user.createMany({
     data: [
@@ -89,6 +107,22 @@ async function main() {
         name: electricalWorker.name,
         role: "WORKER",
         departmentId: electrical.id,
+        isActive: true,
+      },
+      {
+        id: otherRoadsWorker.id,
+        email: otherRoadsWorker.email,
+        name: otherRoadsWorker.name,
+        role: "WORKER",
+        departmentId: roads.id,
+        isActive: true,
+      },
+      {
+        id: roadsAdmin.id,
+        email: roadsAdmin.email,
+        name: roadsAdmin.name,
+        role: "DEPARTMENT_ADMIN",
+        departmentId: roads.id,
         isActive: true,
       },
     ],
@@ -121,28 +155,62 @@ async function main() {
 
   const roadsContext = requireWorkerContext(roadsWorker);
   const electricalContext = requireWorkerContext(electricalWorker);
+  const otherRoadsContext = requireWorkerContext(otherRoadsWorker);
+  const adminContext = requireDepartmentAdminContext(roadsAdmin);
 
-  const crossAccess = await getWorkerComplaintDetail(
-    electricalContext,
-    roadsComplaint.id,
+  assert.equal(
+    (await listWorkerComplaints(roadsContext, {})).complaints.some(
+      (complaint) => complaint.id === roadsComplaint.id,
+    ),
+    false,
   );
-  assert.equal(crossAccess, null);
+  assert.equal(
+    await getWorkerComplaintDetail(electricalContext, roadsComplaint.id),
+    null,
+  );
+  assert.equal(
+    await getWorkerComplaintDetail(otherRoadsContext, roadsComplaint.id),
+    null,
+  );
 
-  await assignComplaintToSelf(roadsContext, roadsComplaint.id);
+  await assignComplaintToWorker(
+    adminContext,
+    roadsComplaint.id,
+    roadsWorker.id,
+  );
+
+  assert.ok(
+    (await listWorkerComplaints(roadsContext, {})).complaints.some(
+      (complaint) => complaint.id === roadsComplaint.id,
+    ),
+  );
+  assert.equal(
+    (await listWorkerComplaints(otherRoadsContext, {})).complaints.some(
+      (complaint) => complaint.id === roadsComplaint.id,
+    ),
+    false,
+  );
+  assert.equal(
+    await getWorkerComplaintDetail(otherRoadsContext, roadsComplaint.id),
+    null,
+  );
+
   await startComplaintProgress(roadsContext, roadsComplaint.id);
   await completeWorkerComplaint(roadsContext, roadsComplaint.id);
 
-  const list = await listWorkerComplaints(roadsContext, {});
-  assert.ok(list.complaints.some((c) => c.id === roadsComplaint.id));
-
-  await assert.rejects(
-    () => assignComplaintToSelf(roadsContext, roadsComplaint.id),
-    WorkerComplaintError,
-  );
-
   await prisma.complaint.delete({ where: { id: roadsComplaint.id } });
   await prisma.user.deleteMany({
-    where: { id: { in: [roadsWorker.id, electricalWorker.id, citizen.id] } },
+    where: {
+      id: {
+        in: [
+          roadsWorker.id,
+          electricalWorker.id,
+          otherRoadsWorker.id,
+          roadsAdmin.id,
+          citizen.id,
+        ],
+      },
+    },
   });
 
   console.log("phase6 worker tests passed");

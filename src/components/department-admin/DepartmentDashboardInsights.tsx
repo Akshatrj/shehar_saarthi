@@ -15,16 +15,14 @@ async function DepartmentDashboardMap({
 }) {
   const analytics = await getDashboardAnalytics({
     departmentId,
-    mapAllDepartments: true,
   });
 
   return (
     <ComplaintsMapSection
-      title="City-wide complaint map"
-      description={`All department complaints plotted by location. ${departmentName} charts below stay scoped to your desk.`}
+      title={`${departmentName} complaint map`}
+      description="Only complaints routed to your department are pinned. Open a pin to assign or update it."
       complaints={analytics.mapComplaints}
       detailPathPrefix="/department-admin/complaints"
-      linkableDepartmentId={departmentId}
       mapTotalCount={analytics.mapTotalCount}
       mapTruncated={analytics.mapTruncated}
     />
@@ -34,7 +32,6 @@ async function DepartmentDashboardMap({
 async function DepartmentDashboardCharts({ departmentId }: { departmentId: string }) {
   const analytics = await getDashboardAnalytics({
     departmentId,
-    mapAllDepartments: true,
   });
 
   return <PortalDashboardCharts {...analytics} />;

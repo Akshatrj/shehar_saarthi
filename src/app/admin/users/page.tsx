@@ -1,6 +1,9 @@
 import { PageHeader } from "@/components/ui/PageHeader";
 import { PaginationNav } from "@/components/ui/PaginationNav";
+import { Card } from "@/components/ui/Card";
 import { UserEditForm } from "@/components/admin/UserEditForm";
+import { CreateWorkerForm } from "@/components/staff/CreateWorkerForm";
+import { createWorkerAction } from "@/app/admin/actions";
 import {
   Table,
   TableBody,
@@ -40,8 +43,25 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
       <PageHeader
         eyebrow="Super Admin"
         title="Users"
-        description="Change roles, departments, and account status."
+        description="Add workers, then change roles, departments, and account status."
       />
+
+      <Card className="p-5">
+        <h2 className="text-h3 text-navy">Add worker</h2>
+        <p className="mt-1 text-small text-muted">
+          Same as department admin: name, email, and password. You choose which
+          department the worker belongs to.
+        </p>
+        <div className="mt-4">
+          {departments.length > 0 ? (
+            <CreateWorkerForm action={createWorkerAction} departments={departments} />
+          ) : (
+            <p className="text-small text-muted">
+              Create an active department before adding workers.
+            </p>
+          )}
+        </div>
+      </Card>
 
       <Table caption="Platform users">
         <TableHeader>

@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/db";
 import type { AuthUser } from "@/lib/rbac";
 import { validateRoleDepartmentRules } from "@/lib/rbac";
+import {
+  createWorkerAccount,
+  WorkerAccountError,
+} from "@/domains/auth/create-worker";
 import { USER_ROLES, type UserRole } from "@/domains/auth/types";
 import { AdminError, ADMIN_PAGE_SIZE, assertSuperAdmin } from "@/domains/admin/auth";
 
@@ -65,6 +69,34 @@ export async function listAdminUsers(actor: AuthUser, page = 1) {
     page: safePage,
     hasMore,
   };
+}
+
+export async function createAdminWorker(
+  actor: AuthUser,
+  input: {
+    name: unknown;
+    email: unknown;
+    password: unknown;
+    confirmPassword: unknown;
+    departmentId: unknown;
+  },
+) {
+  assertSuperAdmin(actor);
+
+  try {
+    return await createWorkerAccount({
+      name: String(input.name ?? ""),
+      email: String(input.email ?? ""),
+      password: String(input.password ?? ""),
+      confirmPassword: String(input.confirmPassword ?? ""),
+      departmentId: String(input.departmentId ?? ""),
+    });
+  } catch (error) {
+    if (error instanceof WorkerAccountError) {
+      throw new AdminError(error.message);
+    }
+    throw error;
+  }
 }
 
 export async function updateAdminUser(

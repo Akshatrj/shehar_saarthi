@@ -11,7 +11,7 @@ const ComplaintsMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-[420px] items-center justify-center rounded-md border border-line bg-brand-50">
+      <div className="flex h-[min(22rem,70dvh)] items-center justify-center rounded-md border border-line bg-brand-50 sm:h-[420px]">
         <Spinner label="Loading map…" />
       </div>
     ),
@@ -28,7 +28,7 @@ type LazyComplaintsMapProps = {
 
 function MapPlaceholder() {
   return (
-    <div className="flex h-[420px] items-center justify-center rounded-md border border-line bg-brand-50">
+    <div className="flex h-[min(22rem,70dvh)] items-center justify-center rounded-md border border-line bg-brand-50 sm:h-[420px]">
       <Spinner label="Preparing map…" />
     </div>
   );

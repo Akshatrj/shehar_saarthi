@@ -139,3 +139,14 @@ export const COMPLAINT_CATEGORY_CATALOG: ComplaintCategoryGroup[] = [
 export const ALL_CATALOG_CATEGORIES = COMPLAINT_CATEGORY_CATALOG.flatMap(
   (group) => group.categories.map((item) => item.value),
 );
+
+export function catalogGroupForCategory(category: ComplaintCategory | null) {
+  if (!category) {
+    return null;
+  }
+  return (
+    COMPLAINT_CATEGORY_CATALOG.find((group) =>
+      group.categories.some((item) => item.value === category),
+    ) ?? null
+  );
+}

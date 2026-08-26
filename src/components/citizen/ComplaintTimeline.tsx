@@ -24,7 +24,7 @@ export function ComplaintTimeline({
     <ol className="relative flex flex-col gap-0" aria-label="Complaint progress">
       {items.map((item, index) => {
         const isLast = index === items.length - 1;
-        const isResolvedStep = /completed|closed/i.test(item.label);
+        const isResolvedStep = /complaint closed/i.test(item.label);
         const isCurrent = index === currentIndex && !isResolvedStep;
 
         return (

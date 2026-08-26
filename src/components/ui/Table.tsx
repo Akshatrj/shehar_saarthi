@@ -14,11 +14,11 @@ export function Table({
   return (
     <div
       className={cn(
-        "overflow-x-auto",
+        "overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]",
         !embedded && "rounded-md border border-line bg-paper-raised",
       )}
     >
-      <table className={cn("w-full min-w-[40rem] text-left text-small", className)} {...props}>
+      <table className={cn("w-full min-w-[36rem] text-left text-small", className)} {...props}>
         {caption ? <caption className="sr-only">{caption}</caption> : null}
         {children}
       </table>

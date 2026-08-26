@@ -2,6 +2,8 @@ import Link from "next/link";
 
 import { notFound } from "next/navigation";
 
+import { AdminDeleteComplaintButton } from "@/components/admin/AdminDeleteComplaintButton";
+
 import { AdminRoutingPanel } from "@/components/admin/AdminRoutingPanel";
 
 import { ComplaintOverrideForm } from "@/components/admin/ComplaintOverrideForm";
@@ -172,6 +174,18 @@ export default async function AdminComplaintDetailPage({ params }: PageProps) {
 
               </div>
 
+              {complaint.contactPhone ? (
+
+                <div>
+
+                  <dt className="font-medium text-navy">Contact phone</dt>
+
+                  <dd className="text-muted">{complaint.contactPhone}</dd>
+
+                </div>
+
+              ) : null}
+
               {complaint.aiDescription ? (
 
                 <div>
@@ -189,6 +203,24 @@ export default async function AdminComplaintDetailPage({ params }: PageProps) {
           </Card>
 
 
+
+          <Card className="p-5">
+
+            <h2 className="text-h3 text-navy">Delete complaint</h2>
+
+            <p className="mt-1 text-small text-muted">
+
+              Permanently remove this complaint from every queue and delete the stored photo.
+
+            </p>
+
+            <div className="mt-4">
+
+              <AdminDeleteComplaintButton complaintId={complaint.id} />
+
+            </div>
+
+          </Card>
 
           <Card className="p-5">
 

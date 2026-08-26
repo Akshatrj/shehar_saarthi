@@ -134,8 +134,6 @@ async function resolveDistributionChart(
 export type DashboardAnalyticsScope = {
   departmentId?: string;
   assignedWorkerId?: string;
-  /** Map pins across all departments while charts stay scoped to departmentId. */
-  mapAllDepartments?: boolean;
 };
 
 function resolveAnalyticsWhere(
@@ -151,12 +149,6 @@ function resolveAnalyticsWhere(
 }
 
 function resolveMapWhere(scope: DashboardAnalyticsScope): Prisma.ComplaintWhereInput {
-  if (scope.assignedWorkerId) {
-    return { assignedWorkerId: scope.assignedWorkerId };
-  }
-  if (scope.mapAllDepartments) {
-    return {};
-  }
   return resolveAnalyticsWhere(scope);
 }
 

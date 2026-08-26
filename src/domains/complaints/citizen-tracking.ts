@@ -109,6 +109,7 @@ export async function getCitizenComplaintDetail(
       latitude: true,
       longitude: true,
       locationLabel: true,
+      contactPhone: true,
       createdAt: true,
       department: {
         select: { id: true, name: true, code: true },
@@ -159,6 +160,7 @@ export async function getCitizenComplaintDetail(
     latitude: row.latitude.toString(),
     longitude: row.longitude.toString(),
     locationLabel: row.locationLabel,
+    contactPhone: row.contactPhone,
     createdAt: row.createdAt.toISOString(),
     timeline,
   };

@@ -29,12 +29,12 @@ export function ComplaintListWithSearch({
   }, [complaints, query]);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <label className="block">
         <span className="sr-only">Search by complaint ID or description</span>
         <span className="relative block">
           <Search
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+            className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
             aria-hidden="true"
           />
           <input
@@ -42,7 +42,7 @@ export function ComplaintListWithSearch({
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search by complaint ID or description…"
-            className={cn(controlClassName, "border-line py-2 pl-10")}
+            className={cn(controlClassName, "min-h-10 border-line py-1.5 pl-9 text-small")}
           />
         </span>
       </label>

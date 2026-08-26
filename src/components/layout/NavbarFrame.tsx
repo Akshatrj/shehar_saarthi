@@ -31,7 +31,7 @@ export function NavbarFrame({ children, className }: NavbarFrameProps) {
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 border-b border-line/80 bg-paper-raised/90 shadow-sm backdrop-blur-md transition-[background-color,box-shadow,border-color,transform] duration-500",
+        "sticky top-0 z-40 border-b border-line/80 bg-paper-raised/90 shadow-sm backdrop-blur-md transition-[background-color,box-shadow,border-color,transform] duration-500 pt-[env(safe-area-inset-top,0px)]",
         !prefersReducedMotion && scrolled && "ss-navbar-scrolled",
         className,
       )}

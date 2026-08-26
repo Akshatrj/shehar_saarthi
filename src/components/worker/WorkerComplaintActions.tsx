@@ -4,11 +4,7 @@ import { useTransition, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
-import {
-  assignToSelf,
-  markCompleted,
-  startProgress,
-} from "@/app/worker/actions";
+import { startProgress, markCompleted } from "@/app/worker/actions";
 
 type WorkerComplaintActionsProps = {
   complaintId: string;
@@ -43,6 +39,14 @@ export function WorkerComplaintActions({
     });
   }
 
+  if (!isAssignedWorker) {
+    return (
+      <p className="text-small text-muted">
+        This complaint is not assigned to you.
+      </p>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-3">
       {error ? (
@@ -51,17 +55,7 @@ export function WorkerComplaintActions({
         </Alert>
       ) : null}
 
-      {status === "ROUTED" ? (
-        <Button
-          type="button"
-          disabled={isPending}
-          onClick={() => runAction(assignToSelf)}
-        >
-          {isPending ? "Assigning…" : "Assign to myself"}
-        </Button>
-      ) : null}
-
-      {status === "ASSIGNED" && isAssignedWorker ? (
+      {status === "ASSIGNED" ? (
         <Button
           type="button"
           disabled={isPending}
@@ -71,7 +65,7 @@ export function WorkerComplaintActions({
         </Button>
       ) : null}
 
-      {status === "IN_PROGRESS" && isAssignedWorker ? (
+      {status === "IN_PROGRESS" ? (
         <Button
           type="button"
           disabled={isPending}
@@ -79,6 +73,12 @@ export function WorkerComplaintActions({
         >
           {isPending ? "Updating…" : "Mark completed"}
         </Button>
+      ) : null}
+
+      {status !== "ASSIGNED" && status !== "IN_PROGRESS" ? (
+        <p className="text-small text-muted">
+          No further worker actions on this complaint.
+        </p>
       ) : null}
     </div>
   );

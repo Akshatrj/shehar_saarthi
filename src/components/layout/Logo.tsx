@@ -24,7 +24,7 @@ export function Logo({
   const lockup = (
     <BrandLogo
       priority={priority}
-      className={cn("w-44 sm:w-52", variant === "lockup" ? className : undefined)}
+      className={cn("w-36 sm:w-44 md:w-52", variant === "lockup" ? className : undefined)}
       width={280}
       height={320}
     />
@@ -41,9 +41,9 @@ export function Logo({
       )
     ) : (
       <>
-        <LogoMark className="h-9 w-9 shrink-0 sm:h-10 sm:w-10" />
+        <LogoMark className="h-8 w-8 shrink-0 sm:h-9 sm:w-9 md:h-10 md:w-10" />
         <span className="min-w-0 leading-none">
-          <span className="ss-brand-text block text-[0.95rem] font-bold uppercase tracking-wide text-navy sm:text-body">
+          <span className="ss-brand-text block truncate text-[0.85rem] font-bold uppercase tracking-wide text-navy sm:text-body">
             Shehar{" "}
             <span className="text-brand">
               Saarthi

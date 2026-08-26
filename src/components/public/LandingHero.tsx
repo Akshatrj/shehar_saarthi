@@ -51,9 +51,9 @@ export function LandingHero() {
         <div className="absolute bottom-0 right-0 h-72 w-72 rounded-full bg-orange/15 blur-3xl" />
       </div>
 
-      <div className="relative mx-auto max-w-6xl px-4 py-14 sm:py-20 lg:py-24">
-        <div className="flex flex-col gap-10 lg:flex-row lg:items-center lg:justify-between">
-          <div className="max-w-2xl">
+      <div className="ss-container relative py-12 sm:py-16 lg:py-24">
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between lg:gap-12">
+          <div className="max-w-2xl min-w-0">
             <p
               className={cn(
                 "text-small font-semibold uppercase tracking-[0.18em] text-brand-light",
@@ -65,7 +65,7 @@ export function LandingHero() {
             </p>
             <h1
               className={cn(
-                "mt-3 text-[2.125rem] font-semibold leading-[1.12] tracking-tight text-white drop-shadow-[0_2px_18px_rgb(10_25_47_/_0.45)] sm:text-display",
+                "ss-display mt-3 font-semibold text-white drop-shadow-[0_2px_18px_rgb(10_25_47_/_0.45)]",
                 motionEnabled && "ss-hero-enter ss-hero-enter--2",
                 motionEnabled && entered && "ss-hero-enter--visible",
               )}
@@ -84,19 +84,19 @@ export function LandingHero() {
             </p>
             <div
               className={cn(
-                "mt-8 flex flex-wrap gap-3",
+                "mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap",
                 motionEnabled && "ss-hero-enter ss-hero-enter--4",
                 motionEnabled && entered && "ss-hero-enter--visible",
               )}
             >
-              <ButtonLink href={PUBLIC_REPORT_HREF} size="lg" className="ss-btn-civic">
+              <ButtonLink href={PUBLIC_REPORT_HREF} size="lg" className="ss-btn-civic w-full sm:w-auto">
                 Report an Issue
               </ButtonLink>
               <ButtonLink
                 href={PUBLIC_TRACK_HREF}
                 variant="secondary"
                 size="lg"
-                className="border-white/20 bg-white/10 text-white ring-white/25 hover:bg-white/15"
+                className="w-full border-white/20 bg-white/10 text-white ring-white/25 hover:bg-white/15 sm:w-auto"
               >
                 Track Complaint
               </ButtonLink>

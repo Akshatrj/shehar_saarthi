@@ -55,8 +55,8 @@ export function AdminComplaintFilters({
   );
 
   return (
-    <form className="flex flex-wrap items-end gap-3" method="get">
-      <div className="flex min-w-[12rem] flex-col gap-1">
+    <form className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end" method="get">
+      <div className="ss-filter-field">
         <label htmlFor="departmentId" className="text-label font-medium text-navy">
           Department
         </label>
@@ -74,7 +74,7 @@ export function AdminComplaintFilters({
           ))}
         </select>
       </div>
-      <div className="flex min-w-[12rem] flex-col gap-1">
+      <div className="ss-filter-field">
         <label htmlFor="status" className="text-label font-medium text-navy">
           Status
         </label>
@@ -92,7 +92,7 @@ export function AdminComplaintFilters({
           ))}
         </select>
       </div>
-      <div className="flex min-w-[12rem] flex-col gap-1">
+      <div className="ss-filter-field">
         <label htmlFor="category" className="text-label font-medium text-navy">
           Category
         </label>
@@ -110,7 +110,7 @@ export function AdminComplaintFilters({
           ))}
         </select>
       </div>
-      <Button type="submit">
+      <Button type="submit" className="w-full sm:w-auto">
         <Filter className="h-4 w-4" aria-hidden />
         Apply filters
       </Button>

@@ -96,6 +96,7 @@ model User {
   name         String
   email        String   @unique
   image        String?
+  passwordHash String?
   departmentId String?  @db.Uuid
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
@@ -169,6 +170,7 @@ model Complaint {
   recurringProblem     Boolean          @default(false)
   priorityReason       String?
   description      String
+  contactPhone     String?            @db.VarChar(20)
   locationLabel    String?            @db.VarChar(500)
   latitude         Decimal            @db.Decimal(9, 6)
   longitude        Decimal            @db.Decimal(9, 6)

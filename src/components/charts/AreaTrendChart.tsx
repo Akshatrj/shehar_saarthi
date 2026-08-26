@@ -90,12 +90,15 @@ export function AreaTrendChart({ data }: AreaTrendChartProps) {
 
         {points.map((point) => (
           <g key={point.date}>
-            <circle cx={point.x} cy={point.y} r={point.count > 0 ? 4 : 2.5} fill="#1565c0" />
-            {point.count > 0 ? (
-              <title>
-                {point.label}: {point.count}
-              </title>
-            ) : null}
+            <circle
+              cx={point.x}
+              cy={point.y}
+              r={point.count > 0 ? 4 : 2.5}
+              fill="#1565c0"
+              {...(point.count > 0
+                ? { "aria-label": `${point.label}: ${point.count}` }
+                : {})}
+            />
           </g>
         ))}
 

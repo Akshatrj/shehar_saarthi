@@ -48,7 +48,7 @@ export function GoogleSignInButton({
         size="lg"
         disabled={disabled}
         className={cn(
-          "h-12 w-full rounded-full border border-[#dadce0] bg-white px-5 text-[0.95rem] font-medium text-[#3c4043] shadow-none hover:bg-[#f8f9fa]",
+          "h-12 w-full rounded-[20px] border border-[#dadce0] bg-white px-5 text-[0.95rem] font-medium text-[#3c4043] shadow-none hover:bg-[#f8f9fa]",
           className,
         )}
       >
