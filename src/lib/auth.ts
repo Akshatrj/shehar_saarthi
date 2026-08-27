@@ -19,7 +19,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     ...authConfig.callbacks,
-    async signIn({ user, account }) {
+    async signIn({ user, account, profile }) {
       if (account?.provider === "credentials") {
         if (!user.email) {
           return false;
@@ -31,6 +31,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
 
       if (account?.provider !== "google" || !user.email) {
+        return false;
+      }
+
+      const googleProfile = profile as { email_verified?: boolean } | undefined;
+      if (googleProfile?.email_verified === false) {
         return false;
       }
 

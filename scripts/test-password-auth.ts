@@ -90,6 +90,23 @@ function testRegisterValidation() {
   );
 }
 
+async function testSuperAdminEmailGuard() {
+  const previous = process.env.SUPER_ADMIN_EMAIL;
+  process.env.SUPER_ADMIN_EMAIL = "civic-admin@example.com";
+  try {
+    const { isSuperAdminEmail } = await import("@/domains/auth/sync-user");
+    assert.equal(isSuperAdminEmail("civic-admin@example.com"), true);
+    assert.equal(isSuperAdminEmail("CIVIC-ADMIN@example.com"), true);
+    assert.equal(isSuperAdminEmail("other@example.com"), false);
+  } finally {
+    if (previous === undefined) {
+      delete process.env.SUPER_ADMIN_EMAIL;
+    } else {
+      process.env.SUPER_ADMIN_EMAIL = previous;
+    }
+  }
+}
+
 async function testAuthorizePasswordUser() {
   loadEnvLocal();
   if (!process.env.DATABASE_URL) {
@@ -128,11 +145,64 @@ async function testAuthorizePasswordUser() {
   }
 }
 
+async function testGoogleSignInClearsPasswordHash() {
+  loadEnvLocal();
+  if (!process.env.DATABASE_URL) {
+    console.log("skip google-merge: DATABASE_URL not set");
+    return;
+  }
+
+  const { prisma } = await import("@/lib/db");
+  const { authorizeCredentials } = await import("@/domains/auth/credentials");
+  const { syncGoogleUser } = await import("@/domains/auth/sync-user");
+  const email = `google-merge-${randomUUID()}@example.com`;
+  const password = "citygate1";
+
+  const created = await prisma.user.create({
+    data: {
+      name: "Unverified Registrar",
+      email,
+      passwordHash: await hashPassword(password),
+      role: "CITIZEN",
+      isActive: true,
+    },
+  });
+
+  try {
+    const before = await authorizeCredentials({ email, password });
+    assert.ok(before, "password login should work before Google sync");
+
+    await syncGoogleUser({
+      email,
+      name: "Google Owner",
+      image: null,
+    });
+
+    const after = await authorizeCredentials({ email, password });
+    assert.equal(
+      after,
+      null,
+      "password login must fail after Google proves ownership",
+    );
+
+    const row = await prisma.user.findUnique({
+      where: { id: created.id },
+      select: { passwordHash: true, name: true },
+    });
+    assert.equal(row?.passwordHash, null);
+    assert.equal(row?.name, "Google Owner");
+  } finally {
+    await prisma.user.delete({ where: { id: created.id } });
+  }
+}
+
 async function main() {
   await testPasswordHashing();
   testPasswordRules();
   testRegisterValidation();
+  await testSuperAdminEmailGuard();
   await testAuthorizePasswordUser();
+  await testGoogleSignInClearsPasswordHash();
   console.log("password-auth tests passed");
 }
 

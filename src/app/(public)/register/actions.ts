@@ -8,6 +8,7 @@ import { postLoginPath, safeAuthCallbackUrl } from "@/lib/auth-callback";
 import { prisma } from "@/lib/db";
 import { hashPassword } from "@/domains/auth/password";
 import { validateRegisterFields } from "@/domains/auth/register";
+import { isSuperAdminEmail } from "@/domains/auth/sync-user";
 
 function registerErrorUrl(code: string, callbackUrl: string) {
   return `/register?error=${code}&callbackUrl=${encodeURIComponent(callbackUrl)}`;
@@ -27,6 +28,10 @@ export async function registerWithCredentials(
 
   if (!validated.ok) {
     redirect(registerErrorUrl(validated.code, fallback));
+  }
+
+  if (isSuperAdminEmail(validated.email)) {
+    redirect(registerErrorUrl("oauth", fallback));
   }
 
   const existing = await prisma.user.findUnique({
