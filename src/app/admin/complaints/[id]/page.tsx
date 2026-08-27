@@ -8,7 +8,7 @@ import { AdminRoutingPanel } from "@/components/admin/AdminRoutingPanel";
 
 import { ComplaintOverrideForm } from "@/components/admin/ComplaintOverrideForm";
 
-import { ComplaintPhoto } from "@/components/complaints/ComplaintPhoto";
+import { ComplaintPhotoCard } from "@/components/complaints/ComplaintPhotoCard";
 
 import { PageHeader } from "@/components/ui/PageHeader";
 
@@ -110,15 +110,7 @@ export default async function AdminComplaintDetailPage({ params }: PageProps) {
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
 
-        <Card className="overflow-hidden p-0">
-
-          <div className="relative aspect-[4/3] w-full bg-paper">
-
-            <ComplaintPhoto src={complaint.imageUrl} />
-
-          </div>
-
-        </Card>
+        <ComplaintPhotoCard src={complaint.imageUrl} />
 
 
 

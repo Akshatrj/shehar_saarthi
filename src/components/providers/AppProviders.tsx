@@ -7,12 +7,12 @@ import { ToastProvider } from "@/components/ui/Toast";
 
 type AppProvidersProps = {
   children: ReactNode;
-  session: Session | null;
+  session?: Session | null;
 };
 
-export function AppProviders({ children, session }: AppProvidersProps) {
+export function AppProviders({ children, session = null }: AppProvidersProps) {
   return (
-    <SessionProvider session={session} basePath="/api/auth">
+    <SessionProvider session={session} basePath="/api/auth" refetchOnWindowFocus>
       <ToastProvider>{children}</ToastProvider>
     </SessionProvider>
   );

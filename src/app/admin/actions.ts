@@ -14,7 +14,6 @@ import {
   autoRouteAllComplaints,
   deleteAdminComplaint,
 } from "@/domains/admin/complaints";
-import { updateAdminUser, createAdminWorker } from "@/domains/admin/users";
 import { AdminError } from "@/domains/admin/auth";
 
 export type AdminActionResult =
@@ -43,37 +42,6 @@ async function runAdminAction(
     console.error("admin action failed", error);
     return failure("Action failed. Please try again.");
   }
-}
-
-export async function updateUserAction(
-  userId: string,
-  formData: FormData,
-): Promise<AdminActionResult> {
-  return runAdminAction(
-    (actor) =>
-      updateAdminUser(actor, userId, {
-        role: formData.get("role"),
-        departmentId: formData.get("departmentId"),
-        isActive: formData.get("isActive"),
-      }),
-    ["/admin/users"],
-  );
-}
-
-export async function createWorkerAction(
-  formData: FormData,
-): Promise<AdminActionResult> {
-  return runAdminAction(
-    (actor) =>
-      createAdminWorker(actor, {
-        name: formData.get("name"),
-        email: formData.get("email"),
-        password: formData.get("password"),
-        confirmPassword: formData.get("confirmPassword"),
-        departmentId: formData.get("departmentId"),
-      }),
-    ["/admin/users", "/department-admin", "/department-admin/workers"],
-  );
 }
 
 export async function createDepartmentAction(

@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { LocationSearch } from "@/components/maps/LocationSearch";
-import "leaflet/dist/leaflet.css";
 
 const DEFAULT_CENTER: [number, number] = [28.6139, 77.209];
 const DEFAULT_ZOOM = 13;

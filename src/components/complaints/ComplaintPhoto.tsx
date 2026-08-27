@@ -16,7 +16,7 @@ export function ComplaintPhoto({
   if (!src || failed) {
     return (
       <div
-        className="flex aspect-[4/3] w-full items-center justify-center bg-paper px-4 text-center text-small text-muted"
+        className="flex min-h-48 w-full items-center justify-center bg-paper px-4 text-center text-small text-muted"
         role="img"
         aria-label="Photo unavailable"
       >
@@ -31,7 +31,7 @@ export function ComplaintPhoto({
     <img
       src={src}
       alt={alt}
-      className="aspect-[4/3] w-full object-cover"
+      className="block h-auto w-full"
       onError={() => setFailed(true)}
     />
   );

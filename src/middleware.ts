@@ -1,60 +1,19 @@
 import NextAuth from "next-auth";
 import { authConfig } from "@/lib/auth.config";
-import {
-  canAccessAdminPortal,
-  canAccessCitizenPortal,
-  canAccessDepartmentAdminPortal,
-  canAccessWorkerPortal,
-  portalPathForRole,
-} from "@/lib/rbac";
-import type { UserRole } from "@/domains/auth/types";
 
-// Edge-safe: must not import @/lib/auth (Prisma-backed jwt callbacks break on middleware).
+// Edge-safe: authentication only. Role/department authorization is enforced in
+// server layouts and API helpers via getAuthUser(), which reads Prisma.
 const { auth } = NextAuth(authConfig);
 
 export default auth((request) => {
   const { pathname } = request.nextUrl;
   const session = request.auth;
   const signedIn = Boolean(session?.user?.id);
-  const isActive = session?.user?.isActive !== false;
-  const role = session?.user?.role as UserRole | undefined;
 
-  if (!signedIn || !isActive) {
+  if (!signedIn) {
     const loginUrl = new URL("/login", request.nextUrl.origin);
-    if (!isActive && signedIn) {
-      loginUrl.searchParams.set("error", "inactive");
-    } else {
-      loginUrl.searchParams.set("callbackUrl", pathname);
-    }
+    loginUrl.searchParams.set("callbackUrl", pathname);
     return Response.redirect(loginUrl);
-  }
-
-  if (pathname.startsWith("/citizen") && role && !canAccessCitizenPortal(role)) {
-    return Response.redirect(
-      new URL(portalPathForRole(role), request.nextUrl.origin),
-    );
-  }
-
-  if (pathname.startsWith("/worker") && role && !canAccessWorkerPortal(role)) {
-    return Response.redirect(
-      new URL(portalPathForRole(role), request.nextUrl.origin),
-    );
-  }
-
-  if (
-    pathname.startsWith("/department-admin") &&
-    role &&
-    !canAccessDepartmentAdminPortal(role)
-  ) {
-    return Response.redirect(
-      new URL(portalPathForRole(role), request.nextUrl.origin),
-    );
-  }
-
-  if (pathname.startsWith("/admin") && role && !canAccessAdminPortal(role)) {
-    return Response.redirect(
-      new URL(portalPathForRole(role), request.nextUrl.origin),
-    );
   }
 
   if (pathname.startsWith("/staff")) {

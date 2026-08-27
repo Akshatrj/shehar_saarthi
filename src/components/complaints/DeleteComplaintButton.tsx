@@ -10,7 +10,6 @@ type DeleteComplaintButtonProps = {
   pendingLabel: string;
   confirmMessage: string;
   redirectTo: string;
-  appearance?: "danger" | "soft-cancel";
   onConfirm: () => Promise<{ ok: boolean; error?: string }>;
 };
 
@@ -19,7 +18,6 @@ export function DeleteComplaintButton({
   pendingLabel,
   confirmMessage,
   redirectTo,
-  appearance = "danger",
   onConfirm,
 }: DeleteComplaintButtonProps) {
   const router = useRouter();
@@ -48,20 +46,15 @@ export function DeleteComplaintButton({
           {error}
         </Alert>
       ) : null}
-      {appearance === "soft-cancel" ? (
-        <button
-          type="button"
-          className="ss-soft-cancel"
-          disabled={isPending}
-          onClick={runConfirm}
-        >
-          {isPending ? pendingLabel : label}
-        </button>
-      ) : (
-        <Button type="button" variant="danger" disabled={isPending} onClick={runConfirm}>
-          {isPending ? pendingLabel : label}
-        </Button>
-      )}
+      <Button
+        type="button"
+        variant="dangerSoft"
+        className="w-full"
+        disabled={isPending}
+        onClick={runConfirm}
+      >
+        {isPending ? pendingLabel : label}
+      </Button>
     </div>
   );
 }

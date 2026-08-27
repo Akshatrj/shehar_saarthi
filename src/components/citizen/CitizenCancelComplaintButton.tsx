@@ -13,7 +13,6 @@ export function CitizenCancelComplaintButton({
       pendingLabel="Cancelling…"
       confirmMessage="Cancel this complaint? It will be permanently deleted and will disappear from staff queues."
       redirectTo="/citizen?canceled=1"
-      appearance="soft-cancel"
       onConfirm={async () => {
         const response = await fetch(`/api/v1/complaints/${complaintId}`, {
           method: "DELETE",

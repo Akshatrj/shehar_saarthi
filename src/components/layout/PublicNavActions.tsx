@@ -1,13 +1,47 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { portalPathForRole } from "@/lib/rbac";
 import type { UserRole } from "@/domains/auth/types";
 
+type MeResponse = {
+  role?: UserRole;
+};
+
 export function PublicNavActions() {
   const { data: session, status } = useSession();
+  const [portalHref, setPortalHref] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (status !== "authenticated" || !session?.user?.id) {
+      setPortalHref(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    fetch("/api/v1/me")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload: MeResponse | null) => {
+        if (cancelled) {
+          return;
+        }
+        const role = payload?.role ?? (session.user.role as UserRole);
+        setPortalHref(portalPathForRole(role));
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPortalHref(portalPathForRole(session.user.role as UserRole));
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.user?.id, session?.user?.role, status]);
 
   if (status === "loading") {
     return (
@@ -16,13 +50,12 @@ export function PublicNavActions() {
   }
 
   if (session?.user?.id) {
-    const role = session.user.role as UserRole;
-    const portalHref = portalPathForRole(role);
+    const href = portalHref ?? portalPathForRole(session.user.role as UserRole);
 
     return (
       <>
         <Link
-          href={portalHref}
+          href={href}
           className="hidden max-w-[10rem] truncate text-small font-medium text-navy hover:text-brand sm:inline"
         >
           {session.user.name ?? session.user.email}

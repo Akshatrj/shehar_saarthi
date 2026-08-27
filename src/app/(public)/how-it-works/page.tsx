@@ -26,16 +26,12 @@ export default function HowItWorksPage() {
     <PublicPage>
       <p className="text-small font-medium text-brand-dark">Process</p>
       <h1 className="mt-2 max-w-2xl text-h1 text-navy">How SheharSaarthi works</h1>
-      <p className="mt-2 max-w-prose text-body text-muted">
-        A report becomes a numbered record, then work the city can assign and you
-        can confirm.
-      </p>
       <ol className="mt-10 grid max-w-5xl gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {workflowSteps.map((step, index) => {
           const Icon = STEP_ICONS[index] ?? Camera;
           return (
             <li key={step.title}>
-              <ChoiceTileStatic>
+              <ChoiceTileStatic className="ss-how-step-card">
                 <span className="ss-choice-tile__icon">
                   <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden="true" />
                 </span>

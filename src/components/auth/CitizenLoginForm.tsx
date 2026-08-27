@@ -30,7 +30,7 @@ export function CitizenLoginForm({
       >
         <div>
           <label htmlFor="login-email" className="sr-only">
-            Email
+            User ID
           </label>
           <input
             id="login-email"
@@ -38,7 +38,7 @@ export function CitizenLoginForm({
             type="email"
             autoComplete="email"
             required
-            placeholder="Email"
+            placeholder="User ID"
             className={authPillInputClassName}
           />
         </div>

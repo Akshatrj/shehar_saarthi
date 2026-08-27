@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import {
   assertAdminAccessDenied,
   createAdminWorker,
+  deleteAdminUser,
   listAdminUsers,
 } from "@/domains/admin/users";
 import { listAdminComplaints, overrideAdminComplaint } from "@/domains/admin/complaints";
@@ -193,6 +194,83 @@ async function main() {
       id: { in: [createdByAdmin.id, createdByDeptAdmin.id, createdForParks.id] },
     },
   });
+
+  const workerToDelete = await createAdminWorker(admin, {
+    name: "Delete Me Worker",
+    email: `delete-worker-${randomUUID()}@test.local`,
+    password: "citygate1",
+    confirmPassword: "citygate1",
+    departmentId: roads.id,
+  });
+  await deleteAdminUser(admin, workerToDelete.id);
+  assert.equal(
+    await prisma.user.findUnique({ where: { id: workerToDelete.id } }),
+    null,
+  );
+
+  const deptAdminToDelete = await prisma.user.create({
+    data: {
+      name: "Delete Me Dept Admin",
+      email: `delete-dept-admin-${randomUUID()}@test.local`,
+      role: "DEPARTMENT_ADMIN",
+      departmentId: roads.id,
+      passwordHash: "test",
+      isActive: true,
+    },
+    select: { id: true },
+  });
+  await deleteAdminUser(admin, deptAdminToDelete.id);
+  assert.equal(
+    await prisma.user.findUnique({ where: { id: deptAdminToDelete.id } }),
+    null,
+  );
+
+  await assert.rejects(
+    () => deleteAdminUser(citizen, workerToDelete.id),
+    /Super admin access is required/,
+  );
+
+  await assert.rejects(
+    () => deleteAdminUser(admin, admin.id),
+    (error: unknown) =>
+      error instanceof AdminError &&
+      error.message === "You cannot delete your own account from here.",
+  );
+
+  const citizenWithComplaint = await prisma.user.create({
+    data: {
+      name: "Citizen With Complaint",
+      email: `citizen-complaint-${randomUUID()}@test.local`,
+      role: "CITIZEN",
+      passwordHash: "test",
+      isActive: true,
+    },
+    select: { id: true },
+  });
+  const complaint = await prisma.complaint.create({
+    data: {
+      publicRef: `TST-${randomUUID().slice(0, 8)}`,
+      citizenId: citizenWithComplaint.id,
+      description: "Test complaint for delete guard",
+      latitude: 28.6139,
+      longitude: 77.209,
+      imageUrl: "https://example.com/test.jpg",
+      status: "SUBMITTED",
+    },
+    select: { id: true },
+  });
+
+  await assert.rejects(
+    () => deleteAdminUser(admin, citizenWithComplaint.id),
+    (error: unknown) =>
+      error instanceof AdminError &&
+      /Cannot delete Citizen With Complaint because they have filed 1 complaint/.test(
+        error.message,
+      ),
+  );
+
+  await prisma.complaint.delete({ where: { id: complaint.id } });
+  await prisma.user.delete({ where: { id: citizenWithComplaint.id } });
 
   const complaints = await listAdminComplaints(admin, {});
   assert.ok(Array.isArray(complaints.complaints));

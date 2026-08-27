@@ -4,7 +4,7 @@ import { cn } from "@/lib/cn";
 type PageHeaderProps = {
   eyebrow?: string;
   title: string;
-  description?: string;
+  description?: ReactNode;
   actions?: ReactNode;
   className?: string;
   heading?: "h1" | "h2";

@@ -6,7 +6,7 @@ import { Logo } from "@/components/layout/Logo";
 import { PublicPage } from "@/components/layout/PublicPage";
 import { Alert } from "@/components/ui/Alert";
 import { safeAuthCallbackUrl } from "@/lib/auth-callback";
-import { auth } from "@/lib/auth";
+import { getAuthUser } from "@/lib/auth/require";
 import { isGoogleAuthConfigured } from "@/lib/auth-env";
 import { portalPathForRole } from "@/lib/rbac";
 
@@ -20,10 +20,10 @@ type RegisterPageProps = {
 
 export default async function RegisterPage({ searchParams }: RegisterPageProps) {
   const params = await searchParams;
-  const session = await auth();
+  const user = await getAuthUser();
 
-  if (session?.user?.id && session.user.isActive !== false) {
-    redirect(portalPathForRole(session.user.role));
+  if (user) {
+    redirect(portalPathForRole(user.role));
   }
 
   const callbackUrl = safeAuthCallbackUrl(params.callbackUrl);

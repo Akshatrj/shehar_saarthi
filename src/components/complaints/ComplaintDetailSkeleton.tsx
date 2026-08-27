@@ -11,7 +11,7 @@ export function ComplaintDetailSkeleton() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
-        <Card className="overflow-hidden p-0">
+        <Card className="self-start overflow-hidden p-0">
           <Skeleton className="aspect-[4/3] w-full" />
         </Card>
         <Card className="flex flex-col gap-3 p-5">

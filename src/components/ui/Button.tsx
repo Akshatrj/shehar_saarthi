@@ -11,6 +11,8 @@ const variants = {
     "bg-transparent text-brand-dark hover:bg-brand-50 focus-visible:outline-brand",
   danger:
     "bg-danger text-white hover:bg-danger/90 focus-visible:outline-danger",
+  dangerSoft:
+    "ss-soft-danger !shadow-none ring-0 focus-visible:outline-danger",
 } as const;
 
 const sizes = {

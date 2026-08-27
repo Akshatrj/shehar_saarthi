@@ -12,9 +12,6 @@ import {
   refreshMapSize,
   waitForMapSize,
 } from "@/components/maps/leaflet-setup";
-import "leaflet/dist/leaflet.css";
-import "leaflet.markercluster/dist/MarkerCluster.css";
-import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 
 const DEFAULT_ZOOM = 12;
 

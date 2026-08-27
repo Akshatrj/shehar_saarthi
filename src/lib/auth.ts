@@ -51,15 +51,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       return true;
     },
-    async jwt({ token, user, account, trigger }) {
-      const needsDatabase =
-        Boolean(user?.id || user?.email) || trigger === "update";
-      if (!needsDatabase) {
-        return token;
-      }
-
+    async jwt({ token, user, account }) {
       try {
-        const { syncGoogleUser, loadUserByEmail } = await import(
+        const { syncGoogleUser, loadUserById, loadUserByEmail } = await import(
           "@/domains/auth/sync-user"
         );
 
@@ -73,7 +67,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return token;
         }
 
-        if (user?.email) {
+        if (account?.provider === "google" && user?.email) {
           const synced = await syncGoogleUser({
             email: user.email,
             name: user.name,
@@ -88,11 +82,31 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return token;
         }
 
-        // Refresh role/active only on explicit session updates, not every page load.
-        if (trigger === "update" && typeof token.email === "string") {
+        const userId =
+          typeof token.userId === "string"
+            ? token.userId
+            : typeof token.sub === "string"
+              ? token.sub
+              : null;
+
+        if (userId) {
+          const synced = await loadUserById(userId);
+          if (synced) {
+            token.userId = synced.id;
+            token.sub = synced.id;
+            token.email = synced.email;
+            token.role = synced.role;
+            token.departmentId = synced.departmentId;
+            token.isActive = synced.isActive;
+          }
+          return token;
+        }
+
+        if (typeof token.email === "string") {
           const synced = await loadUserByEmail(token.email);
           if (synced) {
             token.userId = synced.id;
+            token.sub = synced.id;
             token.role = synced.role;
             token.departmentId = synced.departmentId;
             token.isActive = synced.isActive;

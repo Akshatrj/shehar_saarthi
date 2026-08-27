@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { isNavItemActive } from "@/lib/nav-active";
 import type { NavItem } from "@/components/layout/Navbar";
 
 type MobileNavProps = {
@@ -65,9 +66,7 @@ export function MobileNav({ items, accountItem }: MobileNavProps) {
             className="ss-container flex flex-col py-2"
           >
             {items.map((item) => {
-              const active =
-                pathname === item.href ||
-                (item.href !== "/" && pathname.startsWith(`${item.href}/`));
+              const active = isNavItemActive(items, pathname, item.href);
               return (
                 <Link
                   key={`${item.href}-${item.label}`}

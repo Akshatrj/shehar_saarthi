@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
+import { loadUserById } from "@/domains/auth/sync-user";
 import type { AuthUser } from "@/lib/rbac";
 import {
   canAccessAdminPortal,
@@ -13,36 +14,37 @@ import type { UserRole } from "@/domains/auth/types";
 import { API_ERROR_CODES } from "@/lib/api/errors";
 import { jsonError } from "@/lib/api/response";
 
-function sessionToAuthUser(session: {
-  user: {
-    id: string;
-    email?: string | null;
-    name?: string | null;
-    role: UserRole;
-    departmentId?: string | null;
-    isActive?: boolean;
-  };
+function mapSyncedUserToAuthUser(user: {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  departmentId: string | null;
+  isActive: boolean;
 }): AuthUser {
   return {
-    id: session.user.id,
-    email: session.user.email ?? "",
-    name: session.user.name ?? null,
-    role: session.user.role,
-    departmentId: session.user.departmentId ?? null,
-    isActive: session.user.isActive !== false,
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    departmentId: user.departmentId,
+    isActive: user.isActive,
   };
 }
 
 export const getAuthUser = cache(async (): Promise<AuthUser | null> => {
   const session = await auth();
-  if (!session?.user?.id) {
+  const userId = session?.user?.id;
+  if (!userId) {
     return null;
   }
-  const user = sessionToAuthUser(session);
-  if (!user.isActive) {
+
+  const dbUser = await loadUserById(userId);
+  if (!dbUser || !dbUser.isActive) {
     return null;
   }
-  return user;
+
+  return mapSyncedUserToAuthUser(dbUser);
 });
 
 export const requireAuth = cache(async (): Promise<AuthUser> => {

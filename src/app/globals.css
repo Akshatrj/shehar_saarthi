@@ -1,7 +1,11 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+@import "leaflet.markercluster/dist/MarkerCluster.css";
+@import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 
 @theme {
   --font-sans: var(--font-source-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-playfair-display), Georgia, "Times New Roman", serif;
 
   --color-navy: #0a192f;
   --color-navy-light: #112240;
@@ -267,17 +271,17 @@ h3,
     color 150ms ease;
 }
 
+.ss-soft-danger,
 .ss-soft-cancel {
   display: inline-flex;
-  width: 100%;
   min-height: 45px;
   align-items: center;
   justify-content: center;
   padding: 0 1rem;
   border: none;
   border-radius: 8px;
-  background-color: #f3f7fe;
-  color: #3b82f6;
+  background-color: var(--color-danger-bg);
+  color: var(--color-danger);
   font-size: var(--text-small);
   font-weight: 600;
   cursor: pointer;
@@ -287,6 +291,8 @@ h3,
     color 0.3s ease;
 }
 
+.ss-soft-danger:hover:not(:disabled),
+.ss-soft-danger:focus-visible:not(:disabled),
 .ss-soft-cancel:hover:not(:disabled),
 .ss-soft-cancel:focus-visible:not(:disabled) {
   background-color: var(--color-danger);
@@ -294,6 +300,7 @@ h3,
   color: #ffffff;
 }
 
+.ss-soft-danger:disabled,
 .ss-soft-cancel:disabled {
   cursor: not-allowed;
   opacity: 0.55;
@@ -480,6 +487,64 @@ h3,
   font-size: var(--text-small);
   font-weight: 600;
   color: var(--color-brand-dark);
+}
+
+/* How It Works — step card hover glow (pointer devices only). */
+.ss-how-step-card {
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease,
+    box-shadow 220ms ease,
+    transform 220ms ease;
+}
+
+@media (hover: hover) {
+  .ss-how-step-card:hover {
+    border-color: color-mix(in srgb, var(--color-brand) 28%, var(--color-line));
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--color-brand) 14%, transparent),
+      0 4px 18px rgb(30 136 229 / 0.16),
+      0 10px 28px rgb(30 136 229 / 0.08);
+  }
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .ss-how-step-card:hover {
+    transform: translateY(-2px);
+  }
+}
+
+/* Privacy — highlight card hover glow (pointer devices only). */
+.ss-privacy-highlight {
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease,
+    box-shadow 220ms ease,
+    transform 220ms ease;
+}
+
+@media (hover: hover) {
+  .ss-privacy-highlight:hover {
+    border-color: color-mix(in srgb, var(--color-brand) 28%, var(--color-line));
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--color-brand) 14%, transparent),
+      0 4px 18px rgb(30 136 229 / 0.16),
+      0 10px 28px rgb(30 136 229 / 0.08);
+  }
+
+  .ss-privacy-highlight--orange:hover {
+    border-color: color-mix(in srgb, var(--color-orange) 35%, var(--color-line));
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--color-orange) 18%, transparent),
+      0 4px 18px rgb(255 143 0 / 0.18),
+      0 10px 28px rgb(255 143 0 / 0.1);
+  }
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .ss-privacy-highlight:hover {
+    transform: translateY(-2px);
+  }
 }
 
 .ss-upload-zone:focus-within {
@@ -764,7 +829,20 @@ h3,
 }
 
 .ss-brand-text {
-  letter-spacing: 0.04em;
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  font-feature-settings: "kern" 1, "liga" 1;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (min-width: 640px) {
+  .ss-brand-text {
+    font-size: 1.125rem;
+    letter-spacing: 0.015em;
+  }
 }
 
 .ss-landing-stagger > * {
@@ -1060,5 +1138,170 @@ h3,
     animation: none;
     transform: scale(1);
     opacity: 0.85;
+  }
+}
+
+/* About page — editorial civic section */
+.ss-about-editorial {
+  background:
+    radial-gradient(circle at 12% 8%, rgb(30 136 229 / 0.06), transparent 42%),
+    radial-gradient(circle at 88% 18%, rgb(255 143 0 / 0.05), transparent 38%),
+    linear-gradient(180deg, var(--color-paper) 0%, var(--color-paper-raised) 100%);
+}
+
+.ss-about-brand {
+  padding-top: 0.125rem;
+}
+
+.ss-about-brand::before {
+  content: "";
+  display: block;
+  width: 2.5rem;
+  height: 1px;
+  margin-bottom: 1rem;
+  background: linear-gradient(
+    90deg,
+    var(--color-brand) 0%,
+    var(--color-orange) 100%
+  );
+  opacity: 0.55;
+}
+
+.ss-about-brand-equation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.625rem;
+}
+
+.ss-about-brand-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.125rem;
+  flex: 1 1 5.75rem;
+  min-width: 0;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--color-line) 88%, transparent);
+  border-radius: 0.5rem;
+  background: color-mix(
+    in srgb,
+    var(--color-paper-raised) 94%,
+    var(--color-brand-50)
+  );
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ss-about-brand-label {
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  line-height: 1.2;
+}
+
+.ss-about-brand-word {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: var(--color-navy);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.ss-about-brand-plus {
+  flex-shrink: 0;
+  font-size: 1rem;
+  font-weight: 300;
+  line-height: 1;
+  opacity: 0.75;
+}
+
+@media (min-width: 400px) {
+  .ss-about-brand-equation {
+    flex-wrap: nowrap;
+    gap: 0.625rem 0.75rem;
+  }
+}
+
+@media (min-width: 640px) {
+  .ss-about-brand-box {
+    padding: 0.5625rem 0.875rem;
+  }
+
+  .ss-about-brand-word {
+    font-size: 1.25rem;
+  }
+
+  .ss-about-brand-plus {
+    font-size: 1.125rem;
+  }
+}
+
+.ss-about-report {
+  transition:
+    border-color 0.28s ease,
+    box-shadow 0.28s ease,
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ss-about-report-word {
+  display: inline-block;
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+.ss-about-report-word::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0.08em;
+  width: 100%;
+  height: 2px;
+  transform: scaleX(0);
+  transform-origin: left;
+  background: currentColor;
+  opacity: 0.35;
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (hover: hover) {
+  .ss-about-brand-box--city:hover {
+    border-color: color-mix(in srgb, var(--color-brand) 24%, var(--color-line));
+    background: color-mix(
+      in srgb,
+      var(--color-paper-raised) 88%,
+      var(--color-brand-50)
+    );
+    box-shadow: 0 2px 8px rgb(30 136 229 / 0.08);
+  }
+
+  .ss-about-brand-box--companion:hover {
+    border-color: color-mix(in srgb, var(--color-orange) 24%, var(--color-line));
+    background: color-mix(
+      in srgb,
+      var(--color-paper-raised) 88%,
+      var(--color-orange-50)
+    );
+    box-shadow: 0 2px 8px rgb(255 143 0 / 0.08);
+  }
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .ss-about-brand-box--city:hover,
+  .ss-about-brand-box--companion:hover {
+    transform: translateY(-2px);
+  }
+
+  .ss-about-report:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--color-brand) 22%, var(--color-line));
+    box-shadow: var(--shadow-sm);
+  }
+
+  .ss-about-report:hover .ss-about-report-word::after {
+    transform: scaleX(1);
   }
 }

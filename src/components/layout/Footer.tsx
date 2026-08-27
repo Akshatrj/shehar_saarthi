@@ -41,24 +41,24 @@ export function Footer() {
           <p className="text-small font-semibold uppercase tracking-wider text-brand-light">
             Staff desks
           </p>
-          <p className="mt-4 text-small leading-relaxed text-white/75">
-            This site is not an emergency service. For fire, crime, or medical
-            help, use the numbers published by local authorities.
-          </p>
           <div className="mt-4 flex flex-col items-start gap-1">
-            <Link
-              href="/login?callbackUrl=/admin"
-              className="inline-flex min-h-11 items-center text-small text-brand-light underline-offset-2 hover:underline"
-            >
-              Super admin sign in
-            </Link>
             <Link
               href="/login?callbackUrl=/worker"
               className="inline-flex min-h-11 items-center text-small text-brand-light underline-offset-2 hover:underline"
             >
               Staff sign in
             </Link>
+            <Link
+              href="/login?callbackUrl=/admin"
+              className="inline-flex min-h-11 items-center text-small text-brand-light underline-offset-2 hover:underline"
+            >
+              Super admin sign in
+            </Link>
           </div>
+          <p className="mt-4 text-small leading-relaxed text-white/75">
+            This site is not an emergency service. For fire, crime, or medical
+            help, use the numbers published by local authorities.
+          </p>
         </div>
       </div>
       <div className="border-t border-white/10 pb-[env(safe-area-inset-bottom,0px)]">

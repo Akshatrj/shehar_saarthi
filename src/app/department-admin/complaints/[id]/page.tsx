@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ComplaintHistoryList } from "@/components/complaints/ComplaintHistoryList";
-import { ComplaintPhoto } from "@/components/complaints/ComplaintPhoto";
+import { ComplaintPhotoCard } from "@/components/complaints/ComplaintPhotoCard";
 import { DepartmentAdminComplaintActions } from "@/components/department-admin/DepartmentAdminComplaintActions";
 import { DepartmentAdminAiInsights } from "@/components/department-admin/DepartmentAdminAiInsights";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -69,11 +69,7 @@ export default async function DepartmentAdminComplaintDetailPage({
       />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
-        <Card className="overflow-hidden p-0">
-          <div className="relative aspect-[4/3] w-full bg-paper">
-            <ComplaintPhoto src={complaint.imageUrl} />
-          </div>
-        </Card>
+        <ComplaintPhotoCard src={complaint.imageUrl} />
 
         <div className="flex flex-col gap-4">
           <Card className="p-5">

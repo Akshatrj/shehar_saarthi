@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { Prisma } from "@prisma/client";
 import type { AuthUser } from "@/lib/rbac";
 import { validateRoleDepartmentRules } from "@/lib/rbac";
 import {
@@ -156,6 +157,56 @@ export async function updateAdminUser(
       isActive,
     },
   });
+}
+
+export async function deleteAdminUser(actor: AuthUser, userId: string) {
+  assertSuperAdmin(actor);
+
+  const trimmedId = userId.trim();
+  if (!trimmedId) {
+    throw new AdminError("User not found.");
+  }
+
+  if (trimmedId === actor.id) {
+    throw new AdminError("You cannot delete your own account from here.");
+  }
+
+  const target = await prisma.user.findUnique({
+    where: { id: trimmedId },
+    select: {
+      id: true,
+      name: true,
+      _count: {
+        select: { complaints: true },
+      },
+    },
+  });
+
+  if (!target) {
+    throw new AdminError("User not found.");
+  }
+
+  if (target._count.complaints > 0) {
+    throw new AdminError(
+      `Cannot delete ${target.name} because they have filed ${target._count.complaints} complaint(s). Municipal records must be preserved. Deactivate the account instead.`,
+    );
+  }
+
+  try {
+    await prisma.user.delete({
+      where: { id: trimmedId },
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2003"
+    ) {
+      throw new AdminError(
+        "Cannot delete this user because related records still reference them. Deactivate the account instead.",
+      );
+    }
+    throw error;
+  }
 }
 
 export async function assertAdminAccessDenied(actor: AuthUser) {

@@ -43,9 +43,10 @@ export function Logo({
       <>
         <LogoMark className="h-8 w-8 shrink-0 sm:h-9 sm:w-9 md:h-10 md:w-10" />
         <span className="min-w-0 leading-none">
-          <span className="ss-brand-text block truncate text-[0.85rem] font-bold uppercase tracking-wide text-navy sm:text-body">
-            Shehar{" "}
-            <span className="text-brand">
+          <span className="ss-brand-text block truncate text-navy">
+            <span className="font-medium">Shehar</span>
+            {" "}
+            <span className="font-semibold text-brand">
               Saarthi
               <span className="text-orange">.</span>
             </span>

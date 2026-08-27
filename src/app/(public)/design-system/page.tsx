@@ -99,6 +99,9 @@ export default function DesignSystemPage() {
           <Button variant="secondary">Secondary</Button>
           <Button variant="ghost">Ghost</Button>
           <Button variant="danger">Danger</Button>
+          <Button variant="dangerSoft" className="w-auto min-w-[7.5rem]">
+            Delete
+          </Button>
           <Button disabled>Disabled</Button>
           <ButtonLink href="/design-system" variant="secondary">
             Button link

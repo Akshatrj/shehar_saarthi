@@ -1,12 +1,18 @@
 import type { Metadata, Viewport } from "next";
-import { Source_Sans_3 } from "next/font/google";
+import { Playfair_Display, Source_Sans_3 } from "next/font/google";
 import { AppProviders } from "@/components/providers/AppProviders";
-import { auth } from "@/lib/auth";
 import "./globals.css";
 const sourceSans = Source_Sans_3({
   subsets: ["latin"],
   variable: "--font-source-sans",
   display: "swap",
+});
+
+const playfairDisplay = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-playfair-display",
+  display: "swap",
+  weight: ["500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -25,22 +31,15 @@ export const viewport: Viewport = {
   themeColor: "#0a192f",
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  let session = null;
-  try {
-    session = await auth();
-  } catch (error) {
-    console.error("[auth] root session read failed", error);
-  }
-
   return (
     <html lang="en" data-scroll-behavior="smooth">
-      <body className={`${sourceSans.variable} font-sans antialiased`}>
-        <AppProviders session={session}>{children}</AppProviders>
+      <body className={`${sourceSans.variable} ${playfairDisplay.variable} font-sans antialiased`}>
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );
