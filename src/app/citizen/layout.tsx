@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { AuthenticatedShell } from "@/components/layout/AuthenticatedShell";
-import { requireCitizenPortal } from "@/lib/auth/require";
+import { requireCitizen } from "@/lib/auth/require";
 
 export const metadata: Metadata = {
   title: "Citizen portal",
@@ -11,7 +11,7 @@ export default async function CitizenLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await requireCitizenPortal();
+  const user = await requireCitizen();
 
   return (
     <AuthenticatedShell

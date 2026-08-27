@@ -3,19 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
+import { isNavItemActive } from "@/lib/nav-active";
 import type { NavItem } from "@/components/layout/Navbar";
-
-function itemPath(href: string) {
-  return href.split("#")[0] || "/";
-}
-
-function isActive(pathname: string, href: string) {
-  const path = itemPath(href);
-  if (path === "/") {
-    return pathname === "/";
-  }
-  return pathname === path || pathname.startsWith(`${path}/`);
-}
 
 export function NavLinks({ items }: { items: NavItem[] }) {
   const pathname = usePathname();
@@ -23,7 +12,7 @@ export function NavLinks({ items }: { items: NavItem[] }) {
   return (
     <>
       {items.map((item) => {
-        const active = isActive(pathname, item.href);
+        const active = isNavItemActive(items, pathname, item.href);
         return (
           <Link
             key={`${item.href}-${item.label}`}

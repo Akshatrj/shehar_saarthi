@@ -12,8 +12,8 @@ const ALLOWED_TRANSITIONS: Record<ComplaintStatus, ComplaintStatus[]> = {
   ROUTED: ["ASSIGNED"],
   ASSIGNED: ["IN_PROGRESS"],
   IN_PROGRESS: ["COMPLETED"],
-  COMPLETED: ["CLOSED"],
-  CLOSED: [],
+  COMPLETED: ["CLOSED", "ASSIGNED", "ROUTED"],
+  CLOSED: ["ASSIGNED", "ROUTED"],
 };
 
 export function assertValidTransition(

@@ -4,7 +4,7 @@ import { cn } from "@/lib/cn";
 type PageHeaderProps = {
   eyebrow?: string;
   title: string;
-  description?: string;
+  description?: ReactNode;
   actions?: ReactNode;
   className?: string;
   heading?: "h1" | "h2";
@@ -32,7 +32,9 @@ export function PageHeader({
             {eyebrow}
           </p>
         ) : null}
-        <Heading className="mt-1 text-h1 text-navy">{title}</Heading>
+        <Heading className="mt-1 break-words text-[1.5rem] leading-tight text-navy sm:text-h1">
+          {title}
+        </Heading>
         {description ? (
           <p className="mt-1 max-w-prose text-small text-muted sm:text-body">{description}</p>
         ) : null}

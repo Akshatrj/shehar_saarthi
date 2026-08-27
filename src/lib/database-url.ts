@@ -23,6 +23,11 @@ export function prismaDatasourceUrl(raw: string) {
     if (host.includes("-pooler.") || host.includes("pooler.")) {
       parsed.searchParams.set("pgbouncer", "true");
     }
+    if (host.includes("neon.tech") || host.includes("neon.build")) {
+      if (!parsed.searchParams.has("sslmode")) {
+        parsed.searchParams.set("sslmode", "require");
+      }
+    }
     if (process.env.VERCEL) {
       parsed.searchParams.set("connection_limit", "1");
       if (!parsed.searchParams.has("sslmode")) {
@@ -30,7 +35,10 @@ export function prismaDatasourceUrl(raw: string) {
       }
     }
     if (!parsed.searchParams.has("connect_timeout")) {
-      parsed.searchParams.set("connect_timeout", "3");
+      parsed.searchParams.set("connect_timeout", "15");
+    }
+    if (!parsed.searchParams.has("pool_timeout")) {
+      parsed.searchParams.set("pool_timeout", "15");
     }
     return parsed.toString();
   } catch {

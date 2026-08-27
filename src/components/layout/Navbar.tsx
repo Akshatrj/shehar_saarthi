@@ -3,6 +3,7 @@ import { cn } from "@/lib/cn";
 import { Logo } from "@/components/layout/Logo";
 import { NavLinks } from "@/components/layout/NavLinks";
 import { MobileNav } from "@/components/layout/MobileNav";
+import { NavbarFrame } from "@/components/layout/NavbarFrame";
 
 export type NavItem = {
   href: string;
@@ -23,9 +24,9 @@ export function Navbar({
   const hasItems = items.length > 0;
 
   return (
-    <header className="relative sticky top-0 z-40 border-b border-line/80 bg-paper-raised/95 shadow-sm backdrop-blur-sm">
-      <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5">
-        <Logo compact={compactLogo} />
+    <NavbarFrame>
+      <div className="ss-container flex items-center gap-2 py-2.5 sm:gap-3">
+        <Logo compact={compactLogo} className="min-w-0 shrink" />
         {hasItems ? (
           <nav
             aria-label="Primary"
@@ -45,14 +46,9 @@ export function Navbar({
           )}
         >
           {actions}
-          {hasItems ? (
-            <MobileNav
-              items={items}
-              accountItem={{ href: "/login", label: "Sign in" }}
-            />
-          ) : null}
+          {hasItems ? <MobileNav items={items} /> : null}
         </div>
       </div>
-    </header>
+    </NavbarFrame>
   );
 }

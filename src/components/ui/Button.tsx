@@ -4,13 +4,15 @@ import { cn } from "@/lib/cn";
 
 const variants = {
   primary:
-    "bg-orange text-white shadow-brand hover:bg-orange-dark focus-visible:outline-orange",
+    "ss-btn-civic bg-orange text-white shadow-brand hover:bg-orange-dark focus-visible:outline-orange",
   secondary:
     "bg-paper-raised text-brand-dark ring-1 ring-inset ring-line hover:bg-brand-50 focus-visible:outline-brand",
   ghost:
     "bg-transparent text-brand-dark hover:bg-brand-50 focus-visible:outline-brand",
   danger:
     "bg-danger text-white hover:bg-danger/90 focus-visible:outline-danger",
+  dangerSoft:
+    "ss-soft-danger !shadow-none ring-0 focus-visible:outline-danger",
 } as const;
 
 const sizes = {
@@ -33,7 +35,7 @@ export function buttonClassName(
   className?: string,
 ) {
   return cn(
-    "inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:pointer-events-none disabled:opacity-50",
+        "inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors duration-150 touch-manipulation focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:pointer-events-none disabled:opacity-50",
     variants[variant],
     sizes[size],
     className,

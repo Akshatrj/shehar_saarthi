@@ -1,64 +1,116 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
-import Image from "next/image";
+import { Keyboard, LocateFixed, MapPin } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { ComplaintSuccessPanel } from "@/components/citizen/ComplaintSuccessPanel";
+import { CategoryPicker } from "@/components/citizen/CategoryPicker";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
-import { Field, controlClassName } from "@/components/ui/Field";
+import { ChoiceTile } from "@/components/ui/ChoiceTile";
+import { Field, RequiredMark, controlClassName } from "@/components/ui/Field";
 import { Spinner } from "@/components/ui/Spinner";
-import type { CitizenComplaintSummary } from "@/domains/complaints/constants";
-import { MAX_COMPLAINT_IMAGE_BYTES } from "@/domains/complaints/constants";
+import { UploadZone } from "@/components/ui/UploadZone";
+import { useToast } from "@/components/ui/Toast";
+import { LazyLocationPickerMap } from "@/components/maps/LazyLocationPickerMap";
+import { MAX_COMPLAINT_IMAGE_BYTES, type CitizenComplaintSummary } from "@/domains/complaints/constants";
+import {
+  COMPLAINT_CATEGORY_LABELS,
+  type ComplaintCategory,
+} from "@/domains/complaints/types";
+import {
+  WIZARD_LEAVE_MESSAGE,
+  hasWizardProgress,
+  validateWizardStep,
+  type WizardFieldErrors,
+} from "@/domains/complaints/wizard-validation";
 import { cn } from "@/lib/cn";
 
 type FormState = "idle" | "uploading" | "submitting" | "success" | "error";
+type WizardStep = 1 | 2 | 3;
+type LocationMethod = "gps" | "map" | "manual";
 
-type FieldErrors = {
-  photo?: string;
-  description?: string;
-  latitude?: string;
-  longitude?: string;
-  form?: string;
-};
+type FieldErrors = WizardFieldErrors;
 
-function clientValidate(input: {
-  photo: File | null;
+const STEPS = [
+  { id: 1, label: "Category" },
+  { id: 2, label: "Details" },
+  { id: 3, label: "Location" },
+] as const;
+
+const LOCATION_METHODS: Array<{
+  id: LocationMethod;
+  title: string;
   description: string;
-  latitude: string;
-  longitude: string;
-}): FieldErrors {
-  const errors: FieldErrors = {};
-  if (!input.photo || input.photo.size === 0) {
-    errors.photo = "Please add a photograph of the problem.";
-  } else if (input.photo.size > MAX_COMPLAINT_IMAGE_BYTES) {
-    errors.photo = "Photos must be 8 MB or smaller.";
-  }
-  if (input.description.trim().length < 12) {
-    errors.description = "Please describe the problem in at least 12 characters.";
-  }
-  const lat = Number(input.latitude);
-  if (!Number.isFinite(lat) || lat < -90 || lat > 90) {
-    errors.latitude = "Latitude must be between -90 and 90.";
-  }
-  const lng = Number(input.longitude);
-  if (!Number.isFinite(lng) || lng < -180 || lng > 180) {
-    errors.longitude = "Longitude must be between -180 and 180.";
-  }
-  return errors;
+  icon: typeof MapPin;
+}> = [
+  {
+    id: "gps",
+    title: "Current location",
+    description: "Detect GPS from this device",
+    icon: LocateFixed,
+  },
+  {
+    id: "map",
+    title: "Pin on map",
+    description: "Search or click the map to drop a pin",
+    icon: MapPin,
+  },
+  {
+    id: "manual",
+    title: "Enter coordinates",
+    description: "Type latitude and longitude",
+    icon: Keyboard,
+  },
+];
+
+function WizardProgress({ step }: { step: WizardStep }) {
+  return (
+    <ol className="grid grid-cols-3 gap-2" aria-label="Report steps">
+      {STEPS.map((item) => {
+        const current = item.id === step;
+        const complete = item.id < step;
+        return (
+          <li key={item.id} className="flex flex-col gap-1">
+            <span
+              className={cn(
+                "h-1.5 rounded-full",
+                complete || current ? "bg-brand" : "bg-line",
+              )}
+            />
+            <span
+              className={cn(
+                "text-xs font-medium",
+                current ? "text-navy" : "text-muted",
+              )}
+            >
+              {item.id}. {item.label}
+            </span>
+          </li>
+        );
+      })}
+    </ol>
+  );
 }
 
 export function ReportIssueForm() {
   const router = useRouter();
+  const { toast } = useToast();
+  const [step, setStep] = useState<WizardStep>(1);
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [category, setCategory] = useState<ComplaintCategory | null>(null);
   const [description, setDescription] = useState("");
+  const [phone, setPhone] = useState("");
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
+  const [locationMethod, setLocationMethod] = useState<LocationMethod>("map");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formState, setFormState] = useState<FormState>("idle");
   const [submitted, setSubmitted] = useState<CitizenComplaintSummary | null>(null);
 
   const busy = formState === "uploading" || formState === "submitting";
+  const submitSucceeded = formState === "success" && submitted;
 
   const statusLabel = useMemo(() => {
     if (formState === "uploading") {
@@ -69,6 +121,22 @@ export function ReportIssueForm() {
     }
     return null;
   }, [formState]);
+
+  const wizardInput = {
+    photo,
+    category,
+    description,
+    latitude,
+    longitude,
+    phone,
+  };
+
+  function leaveWizard() {
+    if (hasWizardProgress(wizardInput) && !window.confirm(WIZARD_LEAVE_MESSAGE)) {
+      return;
+    }
+    router.push("/citizen");
+  }
 
   function onPhotoChange(file: File | null) {
     setFieldErrors((current) => ({ ...current, photo: undefined, form: undefined }));
@@ -95,7 +163,8 @@ export function ReportIssueForm() {
     }, 350);
   }
 
-  function useCurrentLocation() {
+  function captureCurrentLocation() {
+    setLocationMethod("gps");
     setFieldErrors((current) => ({
       ...current,
       latitude: undefined,
@@ -112,14 +181,15 @@ export function ReportIssueForm() {
     setFormState("uploading");
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setLatitude(String(position.coords.latitude));
-        setLongitude(String(position.coords.longitude));
+        setLatitude(position.coords.latitude.toFixed(6));
+        setLongitude(position.coords.longitude.toFixed(6));
         setFormState("idle");
+        toast("Location captured from your device.", "success");
       },
       () => {
         setFieldErrors((current) => ({
           ...current,
-          form: "Could not read your location. Enter coordinates manually.",
+          form: "Could not read your location. Pin the map or enter coordinates.",
         }));
         setFormState("idle");
       },
@@ -127,16 +197,44 @@ export function ReportIssueForm() {
     );
   }
 
+  function goToDetails() {
+    const errors = validateWizardStep(1, wizardInput);
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+    setFieldErrors({});
+    setStep(2);
+  }
+
+  function goToLocation() {
+    const errors = validateWizardStep(2, wizardInput);
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+    setFieldErrors({});
+    setStep(3);
+  }
+
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (busy) {
+    if (busy || submitSucceeded) {
+      return;
+    }
+    if (step !== 3) {
       return;
     }
 
-    const errors = clientValidate({ photo, description, latitude, longitude });
+    const errors = validateWizardStep(3, wizardInput);
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       setFormState("error");
+      if (errors.category) {
+        setStep(1);
+      } else if (errors.photo || errors.description || errors.phone) {
+        setStep(2);
+      }
       return;
     }
 
@@ -145,9 +243,13 @@ export function ReportIssueForm() {
 
     const body = new FormData();
     body.set("photo", photo as File);
+    body.set("category", category as string);
     body.set("description", description.trim());
     body.set("latitude", latitude.trim());
     body.set("longitude", longitude.trim());
+    if (phone.trim()) {
+      body.set("phone", phone.trim());
+    }
 
     try {
       const response = await fetch("/api/v1/complaints", {
@@ -160,8 +262,10 @@ export function ReportIssueForm() {
       };
 
       if (!response.ok) {
-        setFieldErrors({ form: payload.message ?? "Submission failed. Please try again." });
+        const message = payload.message ?? "Something went wrong. Please try again.";
+        setFieldErrors({ form: message });
         setFormState("error");
+        toast(message, "error");
         return;
       }
 
@@ -178,46 +282,42 @@ export function ReportIssueForm() {
 
       setSubmitted(complaint);
       setFormState("success");
+      toast("Complaint submitted successfully.", "success");
     } catch {
-      setFieldErrors({
-        form: "Network error while submitting. Check your connection and try again.",
-      });
+      const message =
+        "Network error while submitting. Check your connection and try again.";
+      setFieldErrors({ form: message });
       setFormState("error");
+      toast(message, "error");
     }
   }
 
-  if (formState === "success" && submitted) {
-    return (
-      <div className="flex flex-col gap-4">
-        <Alert variant="success" live="assertive" title="Complaint submitted">
-          Your report <strong>{submitted.publicRef}</strong> is now with the municipal team.
-        </Alert>
-        <div className="flex flex-wrap gap-3">
-          <Button type="button" onClick={() => router.push("/citizen")}>
-            View my complaints
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => {
-              setSubmitted(null);
-              setPhoto(null);
-              setPhotoPreview(null);
-              setDescription("");
-              setLatitude("");
-              setLongitude("");
-              setFormState("idle");
-            }}
-          >
-            Report another issue
-          </Button>
-        </div>
-      </div>
-    );
+  function resetForm() {
+    setSubmitted(null);
+    setPhoto(null);
+    if (photoPreview) {
+      URL.revokeObjectURL(photoPreview);
+    }
+    setPhotoPreview(null);
+    setCategory(null);
+    setDescription("");
+    setPhone("");
+    setLatitude("");
+    setLongitude("");
+    setLocationMethod("map");
+    setFieldErrors({});
+    setFormState("idle");
+    setStep(1);
+  }
+
+  if (submitSucceeded && submitted) {
+    return <ComplaintSuccessPanel complaint={submitted} onReportAnother={resetForm} />;
   }
 
   return (
     <form className="flex flex-col gap-5" onSubmit={onSubmit} noValidate>
+      <WizardProgress step={step} />
+
       {fieldErrors.form ? (
         <Alert variant="danger" live="assertive">
           {fieldErrors.form}
@@ -230,126 +330,295 @@ export function ReportIssueForm() {
         </div>
       ) : null}
 
-      <Field label="Photograph" error={fieldErrors.photo}>
-        {({ id, describedBy, invalid }) => (
-          <div className="flex flex-col gap-3">
-            <input
-              id={id}
-              name="photo"
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              capture="environment"
-              disabled={busy}
-              aria-describedby={describedBy}
-              aria-invalid={invalid}
-              className={cn(controlClassName, "cursor-pointer file:mr-3 file:rounded-md file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:text-small file:font-medium file:text-brand-dark")}
-              onChange={(event) => {
-                const file = event.target.files?.[0] ?? null;
-                onPhotoChange(file);
-              }}
-            />
-            {photoPreview ? (
-              <div className="relative h-40 w-full max-w-xs overflow-hidden rounded-md border border-line bg-paper">
-                <Image
-                  src={photoPreview}
-                  alt="Selected issue photograph preview"
-                  fill
-                  unoptimized
-                  className="object-cover"
-                />
-              </div>
-            ) : null}
-          </div>
-        )}
-      </Field>
-
-      <Field
-        label="Description"
-        hint="What is wrong, and where should staff look?"
-        error={fieldErrors.description}
-      >
-        {({ id, describedBy, invalid }) => (
-          <textarea
-            id={id}
-            name="description"
-            rows={4}
+      {step === 1 ? (
+        <div className="flex flex-col gap-5">
+          <CategoryPicker
+            selectedCategory={category}
             disabled={busy}
-            value={description}
-            aria-describedby={describedBy}
-            aria-invalid={invalid}
-            className={cn(controlClassName, "min-h-24 border-line py-2")}
-            onChange={(event) => {
-              setDescription(event.target.value);
+            categoryError={fieldErrors.category}
+            onCategoryChange={(value) => {
+              setCategory(value);
               setFieldErrors((current) => ({
                 ...current,
-                description: undefined,
+                category: undefined,
                 form: undefined,
               }));
             }}
           />
-        )}
-      </Field>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Latitude" error={fieldErrors.latitude}>
-          {({ id, describedBy, invalid }) => (
-            <input
-              id={id}
-              name="latitude"
-              type="text"
-              inputMode="decimal"
-              autoComplete="off"
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-3">
+            <Button
+              type="button"
+              variant="ghost"
               disabled={busy}
-              value={latitude}
-              aria-describedby={describedBy}
-              aria-invalid={invalid}
-              className={cn(controlClassName, "border-line")}
-              onChange={(event) => {
-                setLatitude(event.target.value);
-                setFieldErrors((current) => ({
-                  ...current,
-                  latitude: undefined,
-                  form: undefined,
-                }));
-              }}
-            />
-          )}
-        </Field>
+              onClick={leaveWizard}
+            >
+              Cancel
+            </Button>
+            <Button type="button" disabled={busy} onClick={goToDetails}>
+              Continue
+            </Button>
+          </div>
+        </div>
+      ) : null}
 
-        <Field label="Longitude" error={fieldErrors.longitude}>
-          {({ id, describedBy, invalid }) => (
-            <input
-              id={id}
-              name="longitude"
-              type="text"
-              inputMode="decimal"
-              autoComplete="off"
-              disabled={busy}
-              value={longitude}
-              aria-describedby={describedBy}
-              aria-invalid={invalid}
-              className={cn(controlClassName, "border-line")}
-              onChange={(event) => {
-                setLongitude(event.target.value);
-                setFieldErrors((current) => ({
-                  ...current,
-                  longitude: undefined,
-                  form: undefined,
-                }));
-              }}
-            />
-          )}
-        </Field>
-      </div>
+      {step === 2 ? (
+        <div className="flex flex-col gap-5">
+          <div>
+            <h3 className="text-body font-semibold text-navy">
+              Add details
+              <RequiredMark />
+            </h3>
+            <p className="mt-1 text-small text-muted">
+              Reporting{" "}
+              <span className="font-medium text-navy">
+                {category ? COMPLAINT_CATEGORY_LABELS[category] : "an issue"}
+              </span>
+              . A photo and short description help staff act faster.
+            </p>
+          </div>
+          <UploadZone
+            required
+            disabled={busy}
+            error={fieldErrors.photo}
+            previewUrl={photoPreview}
+            onFileChange={onPhotoChange}
+          />
+          <Field
+            label="Description"
+            required
+            hint="What is wrong, and where should staff look?"
+            error={fieldErrors.description}
+          >
+            {({ id, describedBy, invalid }) => (
+              <textarea
+                id={id}
+                name="description"
+                rows={4}
+                disabled={busy}
+                value={description}
+                placeholder="Describe the civic issue clearly…"
+                aria-describedby={describedBy}
+                aria-invalid={invalid}
+                aria-required="true"
+                className={cn(controlClassName, "min-h-24 border-line py-2")}
+                onChange={(event) => {
+                  setDescription(event.target.value);
+                  setFieldErrors((current) => ({
+                    ...current,
+                    description: undefined,
+                    form: undefined,
+                  }));
+                }}
+              />
+            )}
+          </Field>
+          <Field
+            label="Phone"
+            hint="Optional. 10-digit mobile number, or +91 followed by 10 digits."
+            error={fieldErrors.phone}
+          >
+            {({ id, describedBy, invalid }) => (
+              <input
+                id={id}
+                name="phone"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                disabled={busy}
+                value={phone}
+                placeholder="e.g. 9876543210"
+                aria-describedby={describedBy}
+                aria-invalid={invalid}
+                className={cn(controlClassName, "border-line")}
+                onChange={(event) => {
+                  setPhone(event.target.value);
+                  setFieldErrors((current) => ({
+                    ...current,
+                    phone: undefined,
+                    form: undefined,
+                  }));
+                }}
+              />
+            )}
+          </Field>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-3">
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={busy}
+                onClick={() => setStep(1)}
+              >
+                Back
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={busy}
+                onClick={leaveWizard}
+              >
+                Cancel
+              </Button>
+            </div>
+            <Button type="button" disabled={busy} onClick={goToLocation}>
+              Continue
+            </Button>
+          </div>
+        </div>
+      ) : null}
 
-      <div className="flex flex-wrap items-center gap-3">
-        <Button type="button" variant="secondary" disabled={busy} onClick={useCurrentLocation}>
-          Use my location
-        </Button>
-        <Button type="submit" disabled={busy}>
-          {busy ? "Submitting…" : "Submit complaint"}
-        </Button>
-      </div>
+      {step === 3 ? (
+        <div className="flex flex-col gap-5">
+          <div>
+            <h3 className="text-body font-semibold text-navy">
+              Where is the issue?
+              <RequiredMark />
+            </h3>
+            <p className="mt-1 text-small text-muted">
+              Choose how to set the location. You can switch methods at any time.
+            </p>
+          </div>
+
+          <div
+            role="radiogroup"
+            aria-label="Location method"
+            className="grid gap-2 md:grid-cols-3"
+          >
+            {LOCATION_METHODS.map((method) => {
+              const Icon = method.icon;
+              const selected = locationMethod === method.id;
+              return (
+                <ChoiceTile
+                  key={method.id}
+                  selected={selected}
+                  role="radio"
+                  aria-checked={selected}
+                  disabled={busy}
+                  onClick={() => {
+                    setLocationMethod(method.id);
+                    if (method.id === "gps") {
+                      captureCurrentLocation();
+                    }
+                  }}
+                >
+                  <span className="ss-choice-tile__icon">
+                    <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden="true" />
+                  </span>
+                  <span>
+                    <span className="ss-choice-tile__title">{method.title}</span>
+                    <span className="ss-choice-tile__muted">{method.description}</span>
+                  </span>
+                </ChoiceTile>
+              );
+            })}
+          </div>
+
+          <LazyLocationPickerMap
+            latitude={latitude}
+            longitude={longitude}
+            disabled={busy}
+            showSearch={locationMethod === "map"}
+            onPick={(nextLat, nextLng) => {
+              setLocationMethod("map");
+              setLatitude(String(nextLat));
+              setLongitude(String(nextLng));
+              setFieldErrors((current) => ({
+                ...current,
+                latitude: undefined,
+                longitude: undefined,
+                form: undefined,
+              }));
+            }}
+          />
+
+          {locationMethod === "manual" ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Latitude" required error={fieldErrors.latitude}>
+                {({ id, describedBy, invalid }) => (
+                  <input
+                    id={id}
+                    name="latitude"
+                    type="text"
+                    inputMode="decimal"
+                    autoComplete="off"
+                    disabled={busy}
+                    value={latitude}
+                    placeholder="e.g. 28.6139"
+                    aria-describedby={describedBy}
+                    aria-invalid={invalid}
+                    aria-required="true"
+                    className={cn(controlClassName, "border-line")}
+                    onChange={(event) => {
+                      setLatitude(event.target.value);
+                      setFieldErrors((current) => ({
+                        ...current,
+                        latitude: undefined,
+                        form: undefined,
+                      }));
+                    }}
+                  />
+                )}
+              </Field>
+              <Field label="Longitude" required error={fieldErrors.longitude}>
+                {({ id, describedBy, invalid }) => (
+                  <input
+                    id={id}
+                    name="longitude"
+                    type="text"
+                    inputMode="decimal"
+                    autoComplete="off"
+                    disabled={busy}
+                    value={longitude}
+                    placeholder="e.g. 77.2090"
+                    aria-describedby={describedBy}
+                    aria-invalid={invalid}
+                    aria-required="true"
+                    className={cn(controlClassName, "border-line")}
+                    onChange={(event) => {
+                      setLongitude(event.target.value);
+                      setFieldErrors((current) => ({
+                        ...current,
+                        longitude: undefined,
+                        form: undefined,
+                      }));
+                    }}
+                  />
+                )}
+              </Field>
+            </div>
+          ) : null}
+
+          {locationMethod !== "manual" && (fieldErrors.latitude || fieldErrors.longitude) ? (
+            <p className="text-small text-danger" role="alert">
+              {fieldErrors.latitude ?? fieldErrors.longitude}
+            </p>
+          ) : null}
+
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-3">
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={busy}
+                onClick={() => setStep(2)}
+              >
+                Back
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={busy}
+                onClick={leaveWizard}
+              >
+                Cancel
+              </Button>
+            </div>
+            <Button type="submit" disabled={busy} className="min-w-[11rem]">
+              {formState === "submitting" ? "Submitting…" : "Submit complaint"}
+            </Button>
+          </div>
+        </div>
+      ) : null}
     </form>
   );
 }

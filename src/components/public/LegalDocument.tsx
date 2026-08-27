@@ -5,7 +5,7 @@ import { ButtonLink } from "@/components/ui/Button";
 
 type LegalDocumentProps = {
   title: string;
-  description: string;
+  description: ReactNode;
   children: ReactNode;
 };
 

@@ -8,7 +8,7 @@ type PublicPageProps = {
 
 export function PublicPage({ children, className }: PublicPageProps) {
   return (
-    <div className={cn("mx-auto w-full max-w-6xl px-4 py-8", className)}>
+    <div className={cn("ss-container py-5 sm:py-8 lg:py-10", className)}>
       {children}
     </div>
   );

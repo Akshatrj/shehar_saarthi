@@ -15,14 +15,22 @@ function superAdminEmail() {
   return process.env.SUPER_ADMIN_EMAIL?.trim().toLowerCase() ?? "";
 }
 
-function isSuperAdminEmail(email: string) {
+export function isSuperAdminEmail(email: string) {
   const configured = superAdminEmail();
   return configured.length > 0 && email.toLowerCase() === configured;
 }
 
 function asUserRole(value: string): UserRole {
-  if (value === "STAFF" || value === "SUPER_ADMIN" || value === "CITIZEN") {
+  if (
+    value === "WORKER" ||
+    value === "DEPARTMENT_ADMIN" ||
+    value === "SUPER_ADMIN" ||
+    value === "CITIZEN"
+  ) {
     return value;
+  }
+  if (value === "STAFF") {
+    return "WORKER";
   }
   return "CITIZEN";
 }
@@ -45,6 +53,7 @@ export async function syncGoogleUser(input: {
       data: {
         name: displayName,
         image: input.image ?? null,
+        passwordHash: null,
         ...(promoteToSuperAdmin ? { role: "SUPER_ADMIN" as const } : {}),
       },
       select: {

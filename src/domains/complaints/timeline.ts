@@ -1,10 +1,3 @@
-import type { CategoryRoutingMetadata } from "@/domains/complaints/constants";
-import { DEPARTMENT_NAMES, type DepartmentSlug } from "@/domains/complaints/categories";
-import {
-  COMPLAINT_CATEGORY_LABELS,
-  type ComplaintCategory,
-} from "@/domains/complaints/types";
-
 export type CitizenTimelineItem = {
   id: string;
   label: string;
@@ -15,38 +8,43 @@ export type CitizenTimelineItem = {
 type HistoryEntry = {
   id: string;
   action: string;
-  fromStatus: string | null;
-  toStatus: string;
-  note: string | null;
+  oldStatus: string | null;
+  newStatus: string;
+  metadata: string | null;
   createdAt: string;
 };
 
-function parseRoutingNote(note: string | null): CategoryRoutingMetadata | null {
-  if (!note) {
-    return null;
-  }
-  try {
-    return JSON.parse(note) as CategoryRoutingMetadata;
-  } catch {
-    return null;
-  }
-}
+const LABELS = {
+  submitted: "Complaint submitted",
+  verified: "Complaint verified",
+  inProgress: "In progress with department",
+  workerAssigned: "Worker assigned",
+  workerReady: "Worker is ready for job",
+  closed: "Complaint closed",
+  reopened: "Reopened",
+} as const;
 
-function departmentLabel(slug: string | undefined) {
-  if (!slug) {
-    return null;
-  }
-  return DEPARTMENT_NAMES[slug as DepartmentSlug] ?? slug;
-}
-
-function categoryLabel(category: string | undefined) {
-  if (!category) {
+function parseReopenReason(metadata: string | null) {
+  if (!metadata) {
     return undefined;
   }
-  if (category in COMPLAINT_CATEGORY_LABELS) {
-    return COMPLAINT_CATEGORY_LABELS[category as ComplaintCategory];
+  try {
+    const parsed = JSON.parse(metadata) as { reason?: unknown };
+    if (typeof parsed.reason === "string" && parsed.reason.trim()) {
+      return parsed.reason.trim();
+    }
+  } catch {
+    return undefined;
   }
-  return category;
+  return undefined;
+}
+
+function isRoutedStatus(newStatus: string) {
+  return newStatus === "ROUTED";
+}
+
+function isAssignedStatus(newStatus: string) {
+  return newStatus === "ASSIGNED";
 }
 
 export function buildCitizenTimeline(input: {
@@ -54,106 +52,97 @@ export function buildCitizenTimeline(input: {
   aiCategory: string | null;
   aiDescription: string | null;
 }): CitizenTimelineItem[] {
+  const lastReopenIndex = input.history.reduce(
+    (last, entry, index) =>
+      entry.action === "REOPENED_BY_CITIZEN" ? index : last,
+    -1,
+  );
+  const segment =
+    lastReopenIndex >= 0
+      ? input.history.slice(lastReopenIndex)
+      : input.history;
+
   const items: CitizenTimelineItem[] = [];
+  const seen = new Set<string>();
 
-  for (const entry of input.history) {
-    if (entry.action === "SUBMITTED") {
-      items.push({
-        id: entry.id,
-        label: "Complaint submitted",
-        createdAt: entry.createdAt,
-      });
+  const push = (
+    label: string,
+    entry: HistoryEntry,
+    detail?: string,
+    id?: string,
+  ) => {
+    if (seen.has(label)) {
+      return;
+    }
+    seen.add(label);
+    items.push({
+      id: id ?? entry.id,
+      label,
+      detail,
+      createdAt: entry.createdAt,
+    });
+  };
 
-      if (input.aiCategory) {
-        items.push({
-          id: `${entry.id}-ai`,
-          label: "AI category suggested",
-          detail: categoryLabel(input.aiCategory),
-          createdAt: entry.createdAt,
-        });
+  for (const entry of segment) {
+    const { action, newStatus } = entry;
+
+    if (action === "SUBMITTED") {
+      push(LABELS.submitted, entry);
+      continue;
+    }
+
+    if (action === "REOPENED_BY_CITIZEN") {
+      push(LABELS.reopened, entry, parseReopenReason(entry.metadata));
+      if (isRoutedStatus(newStatus)) {
+        push(LABELS.inProgress, entry, undefined, `${entry.id}-dept`);
+      } else if (isAssignedStatus(newStatus)) {
+        push(LABELS.workerAssigned, entry, undefined, `${entry.id}-assigned`);
       }
       continue;
     }
 
     if (
-      entry.action === "CATEGORY_CONFIRMED" ||
-      entry.action === "CATEGORY_CHANGED"
+      action === "AI_CLASSIFIED" ||
+      action === "CATEGORY_CONFIRMED" ||
+      action === "CATEGORY_CHANGED" ||
+      action === "ADMIN_OVERRIDE"
     ) {
-      const routing = parseRoutingNote(entry.note);
-      items.push({
-        id: `${entry.id}-category`,
-        label:
-          entry.action === "CATEGORY_CONFIRMED"
-            ? "Category confirmed"
-            : "Category changed",
-        detail: categoryLabel(routing?.category),
-        createdAt: entry.createdAt,
-      });
+      push(LABELS.verified, entry);
+    }
 
-      if (entry.toStatus === "ROUTED") {
-        items.push({
-          id: `${entry.id}-routed`,
-          label: `Routed to ${departmentLabel(routing?.departmentSlug) ?? "department"}`,
-          createdAt: entry.createdAt,
-        });
+    if (action === "AUTO_ROUTED" || action === "MANUALLY_ROUTED") {
+      push(LABELS.verified, entry, undefined, `${entry.id}-verified`);
+      if (isRoutedStatus(newStatus)) {
+        push(LABELS.inProgress, entry, undefined, `${entry.id}-dept`);
       }
       continue;
     }
 
-    if (entry.action === "ASSIGNED_TO_SELF") {
-      items.push({
-        id: entry.id,
-        label: "Assigned to staff",
-        createdAt: entry.createdAt,
-      });
+    if (
+      (action === "CATEGORY_CONFIRMED" || action === "CATEGORY_CHANGED") &&
+      isRoutedStatus(newStatus)
+    ) {
+      push(LABELS.inProgress, entry, undefined, `${entry.id}-dept`);
       continue;
     }
 
-    if (entry.action === "STARTED_PROGRESS") {
-      items.push({
-        id: entry.id,
-        label: "Work started",
-        createdAt: entry.createdAt,
-      });
+    if (
+      action === "ASSIGNED_TO_WORKER" ||
+      action === "ASSIGNED_TO_SELF" ||
+      action === "REASSIGNED_TO_WORKER"
+    ) {
+      push(LABELS.workerAssigned, entry);
       continue;
     }
 
-    if (entry.action === "MARKED_COMPLETED") {
-      items.push({
-        id: entry.id,
-        label: "Completed",
-        createdAt: entry.createdAt,
-      });
+    if (action === "STARTED_PROGRESS") {
+      push(LABELS.workerReady, entry);
       continue;
     }
 
-    if (entry.action === "ADMIN_OVERRIDE") {
-      items.push({
-        id: entry.id,
-        label: "Administrative correction",
-        createdAt: entry.createdAt,
-      });
-      continue;
+    if (action === "MARKED_COMPLETED" || action === "CLOSED") {
+      push(LABELS.closed, entry);
     }
-
-    items.push({
-      id: entry.id,
-      label: entry.action
-        .toLowerCase()
-        .split("_")
-        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-        .join(" "),
-      createdAt: entry.createdAt,
-    });
-  }
-
-  if (input.aiCategory && !input.history.some((entry) => entry.action === "SUBMITTED")) {
-    items.unshift({
-      id: "ai-suggestion",
-      label: "AI category suggested",
-      detail: categoryLabel(input.aiCategory),
-      createdAt: input.history[0]?.createdAt ?? new Date().toISOString(),
-    });
   }
 
   return items;

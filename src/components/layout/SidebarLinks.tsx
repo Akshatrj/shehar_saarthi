@@ -15,7 +15,8 @@ export function SidebarLinks({ items }: { items: NavItem[] }) {
           pathname === item.href ||
           (item.href !== "/admin" &&
             item.href !== "/dashboard" &&
-            item.href !== "/staff" &&
+            item.href !== "/worker" &&
+            item.href !== "/department-admin" &&
             pathname.startsWith(item.href));
         return (
           <Link

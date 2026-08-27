@@ -12,10 +12,10 @@ const footerLinks = [
 export function Footer() {
   return (
     <footer className="border-t border-navy-light bg-navy text-white">
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 md:grid-cols-[1.1fr_1fr_1fr]">
+      <div className="ss-container grid gap-8 py-10 sm:gap-10 sm:py-12 md:grid-cols-[1.1fr_1fr_1fr]">
         <div className="flex flex-col gap-4">
-          <Logo variant="lockup" href="/" />
-          <p className="max-w-sm text-small leading-relaxed text-navy-muted">
+          <Logo variant="lockup" href="/" surface="light" priority={false} />
+          <p className="max-w-sm text-small leading-relaxed text-white/75">
             A civic companion for reporting and resolving city issues. Field
             staff see the problem, not the person who reported it.
           </p>
@@ -41,28 +41,28 @@ export function Footer() {
           <p className="text-small font-semibold uppercase tracking-wider text-brand-light">
             Staff desks
           </p>
-          <p className="mt-4 text-small leading-relaxed text-navy-muted">
-            This site is not an emergency service. For fire, crime, or medical
-            help, use the numbers published by local authorities.
-          </p>
           <div className="mt-4 flex flex-col items-start gap-1">
+            <Link
+              href="/login?callbackUrl=/worker"
+              className="inline-flex min-h-11 items-center text-small text-brand-light underline-offset-2 hover:underline"
+            >
+              Staff sign in
+            </Link>
             <Link
               href="/login?callbackUrl=/admin"
               className="inline-flex min-h-11 items-center text-small text-brand-light underline-offset-2 hover:underline"
             >
               Super admin sign in
             </Link>
-            <Link
-              href="/login?callbackUrl=/staff"
-              className="inline-flex min-h-11 items-center text-small text-brand-light underline-offset-2 hover:underline"
-            >
-              Staff sign in
-            </Link>
           </div>
+          <p className="mt-4 text-small leading-relaxed text-white/75">
+            This site is not an emergency service. For fire, crime, or medical
+            help, use the numbers published by local authorities.
+          </p>
         </div>
       </div>
-      <div className="border-t border-white/10">
-        <p className="mx-auto max-w-6xl px-4 py-4 text-center text-xs text-navy-muted">
+      <div className="border-t border-white/10 pb-[env(safe-area-inset-bottom,0px)]">
+        <p className="ss-container py-4 text-center text-xs text-white/60">
           © {new Date().getFullYear()} Shehar Saarthi · Civic Issue Portal
         </p>
       </div>

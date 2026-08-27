@@ -16,7 +16,7 @@ export class CategoryConfirmationError extends Error {
 }
 
 function assertCitizenActor(actor: AuthUser) {
-  if (actor.role !== "CITIZEN" && actor.role !== "SUPER_ADMIN") {
+  if (actor.role !== "CITIZEN") {
     throw new CategoryConfirmationError(
       "Only citizens can confirm complaint categories.",
     );
@@ -98,12 +98,12 @@ async function routeComplaint(input: {
         complaintId: input.complaintId,
         actorId: input.actor.id,
         action: input.historyAction,
-        fromStatus: "SUBMITTED",
-        toStatus: "ROUTED",
-        note: historyNote({
+        oldStatus: "SUBMITTED",
+        newStatus: "ROUTED",
+        metadata: historyNote({
           category: input.category,
           routingMethod: input.routingMethod,
-          departmentSlug: department.slug,
+          departmentCode: department.code,
         }),
       },
     });

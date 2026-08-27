@@ -6,13 +6,14 @@ const links = [
   { href: "/admin/users", label: "Users" },
   { href: "/admin/departments", label: "Departments" },
   { href: "/admin/complaints", label: "Complaints" },
+  { href: "/admin/ai", label: "AI Intelligence" },
 ];
 
 export function AdminNav({ pathname }: { pathname: string }) {
   return (
     <nav
       aria-label="Admin sections"
-      className="flex flex-wrap gap-2 border-b border-line pb-4"
+      className="-mx-1 flex flex-nowrap gap-2 overflow-x-auto overscroll-x-contain border-b border-line pb-4 [-webkit-overflow-scrolling:touch] sm:flex-wrap"
     >
       {links.map((link) => {
         const active =
@@ -22,7 +23,7 @@ export function AdminNav({ pathname }: { pathname: string }) {
             key={link.href}
             href={link.href}
             className={cn(
-              "inline-flex min-h-11 items-center rounded-md px-3 text-small font-medium",
+              "inline-flex min-h-11 shrink-0 items-center rounded-md px-3 text-small font-medium",
               active
                 ? "bg-brand-50 text-brand-dark"
                 : "text-muted hover:bg-brand-50 hover:text-brand",

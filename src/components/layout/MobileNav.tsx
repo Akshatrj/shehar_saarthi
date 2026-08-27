@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { isNavItemActive } from "@/lib/nav-active";
 import type { NavItem } from "@/components/layout/Navbar";
 
 type MobileNavProps = {
@@ -20,6 +21,24 @@ export function MobileNav({ items, accountItem }: MobileNavProps) {
   useEffect(() => {
     setOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
 
   return (
     <div className="lg:hidden">
@@ -40,16 +59,14 @@ export function MobileNav({ items, accountItem }: MobileNavProps) {
       {open ? (
         <div
           id={panelId}
-          className="absolute inset-x-0 top-full z-40 border-b border-line bg-paper-raised"
+          className="absolute inset-x-0 top-full z-40 max-h-[min(80dvh,calc(100dvh-4rem))] overflow-y-auto border-b border-line bg-paper-raised pb-[env(safe-area-inset-bottom,0px)]"
         >
           <nav
             aria-label="Primary"
-            className="mx-auto flex max-w-6xl flex-col px-2 py-2"
+            className="ss-container flex flex-col py-2"
           >
             {items.map((item) => {
-              const active =
-                pathname === item.href ||
-                (item.href !== "/" && pathname.startsWith(`${item.href}/`));
+              const active = isNavItemActive(items, pathname, item.href);
               return (
                 <Link
                   key={`${item.href}-${item.label}`}

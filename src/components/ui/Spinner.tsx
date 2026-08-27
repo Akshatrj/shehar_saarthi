@@ -5,6 +5,8 @@ type SpinnerProps = HTMLAttributes<HTMLDivElement> & {
   label?: string;
 };
 
+const DOTS = Array.from({ length: 8 }, (_, index) => index);
+
 export function Spinner({
   className,
   label = "Loading",
@@ -13,13 +15,14 @@ export function Spinner({
   return (
     <div
       role="status"
-      className={cn("inline-flex items-center gap-2 text-green-800", className)}
+      className={cn("inline-flex items-center gap-3 text-navy", className)}
       {...props}
     >
-      <span
-        className="h-5 w-5 animate-spin rounded-full border-2 border-green-200 border-t-green-800"
-        aria-hidden="true"
-      />
+      <span className="ss-dot-spinner" aria-hidden="true">
+        {DOTS.map((dot) => (
+          <span key={dot} className="ss-dot-spinner__dot" />
+        ))}
+      </span>
       <span className="text-small">{label}</span>
     </div>
   );

@@ -1,27 +1,46 @@
-import { Card } from "@/components/ui/Card";
+import { CheckCircle2, ClipboardList, Clock3, Loader } from "lucide-react";
+import { StatCard } from "@/components/ui/StatCard";
 import type { CitizenComplaintStats } from "@/domains/complaints/constants";
 
-const statItems: Array<{
-  key: keyof CitizenComplaintStats;
-  label: string;
-}> = [
-  { key: "submitted", label: "Submitted" },
-  { key: "routed", label: "Routed" },
-  { key: "assigned", label: "Assigned" },
-  { key: "inProgress", label: "In progress" },
-  { key: "completed", label: "Completed" },
-  { key: "closed", label: "Closed" },
-];
-
 export function CitizenStatsGrid({ stats }: { stats: CitizenComplaintStats }) {
+  const total =
+    stats.submitted +
+    stats.routed +
+    stats.assigned +
+    stats.inProgress +
+    stats.completed +
+    stats.closed;
+
+  const pending = stats.submitted + stats.routed + stats.assigned;
+  const resolved = stats.completed + stats.closed;
+
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-      {statItems.map((item) => (
-        <Card key={item.key} className="p-4">
-          <p className="text-small text-muted">{item.label}</p>
-          <p className="mt-1 text-h2 text-navy">{stats[item.key]}</p>
-        </Card>
-      ))}
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <StatCard
+        label="Total complaints"
+        value={total}
+        icon={ClipboardList}
+        tone="brand"
+      />
+      <StatCard
+        label="Pending"
+        value={pending}
+        hint="Submitted, routed, or assigned"
+        icon={Clock3}
+        tone="warning"
+      />
+      <StatCard
+        label="In progress"
+        value={stats.inProgress}
+        icon={Loader}
+      />
+      <StatCard
+        label="Resolved"
+        value={resolved}
+        hint="Completed or closed"
+        icon={CheckCircle2}
+        tone="success"
+      />
     </div>
   );
 }

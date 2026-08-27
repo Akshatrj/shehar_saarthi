@@ -36,7 +36,7 @@ export async function listAdminDepartments(actor: AuthUser) {
     select: {
       id: true,
       name: true,
-      slug: true,
+      code: true,
       isActive: true,
       createdAt: true,
     },
@@ -45,7 +45,7 @@ export async function listAdminDepartments(actor: AuthUser) {
   return rows.map((row) => ({
     id: row.id,
     name: row.name,
-    code: row.slug,
+    code: row.code,
     isActive: row.isActive,
     createdAt: row.createdAt.toISOString(),
   }));
@@ -61,7 +61,7 @@ export async function createAdminDepartment(
   const code = parseDepartmentCode(input.code);
 
   const existing = await prisma.department.findFirst({
-    where: { OR: [{ name }, { slug: code }] },
+    where: { OR: [{ name }, { code }] },
     select: { id: true },
   });
   if (existing) {
@@ -69,7 +69,7 @@ export async function createAdminDepartment(
   }
 
   return prisma.department.create({
-    data: { name, slug: code, isActive: true },
+    data: { name, code, isActive: true },
     select: { id: true },
   }).then(() => undefined);
 }
@@ -98,7 +98,7 @@ export async function updateAdminDepartment(
 
   const conflict = await prisma.department.findFirst({
     where: {
-      OR: [{ name }, { slug: code }],
+      OR: [{ name }, { code }],
       NOT: { id: departmentId },
     },
     select: { id: true },
@@ -109,7 +109,7 @@ export async function updateAdminDepartment(
 
   await prisma.department.update({
     where: { id: departmentId },
-    data: { name, slug: code, isActive },
+    data: { name, code, isActive },
   });
 }
 
@@ -118,6 +118,14 @@ export async function listActiveDepartmentsForSelect(actor: AuthUser) {
   return prisma.department.findMany({
     where: { isActive: true },
     orderBy: { name: "asc" },
-    select: { id: true, name: true, slug: true },
+    select: { id: true, name: true, code: true },
+  });
+}
+
+export async function listActiveDepartmentsForCitizen() {
+  return prisma.department.findMany({
+    where: { isActive: true },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true, code: true },
   });
 }

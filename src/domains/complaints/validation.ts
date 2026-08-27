@@ -98,6 +98,26 @@ export function validateComplaintDescription(value: unknown) {
   return description;
 }
 
+export function validateOptionalContactPhone(value: unknown): string | null {
+  if (value == null) {
+    return null;
+  }
+
+  const raw = typeof value === "string" ? value.trim() : "";
+  if (!raw) {
+    return null;
+  }
+
+  const compact = raw.replace(/[\s-]/g, "");
+  if (/^\d{10}$/.test(compact) || /^\+91\d{10}$/.test(compact)) {
+    return compact;
+  }
+
+  throw new ComplaintValidationError(
+    "Enter a 10-digit mobile number or +91 followed by 10 digits.",
+  );
+}
+
 export function validateCoordinate(
   value: unknown,
   axis: "latitude" | "longitude",

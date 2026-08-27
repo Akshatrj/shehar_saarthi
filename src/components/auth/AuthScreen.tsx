@@ -19,7 +19,7 @@ export function AuthScreen({
     <PublicPage>
       <div className="mx-auto max-w-md py-8 sm:py-14">
         <div className="mb-8 flex justify-center">
-          <Logo variant="lockup" href="/" className="w-40 sm:w-44" />
+          <Logo variant="lockup" href="/" surface="light" priority className="w-40 sm:w-44" />
         </div>
         <h1 className="text-h1 text-navy">{title}</h1>
         <p className="mt-2 text-body text-muted">{description}</p>

@@ -9,6 +9,7 @@ import {
   validateComplaintDescription,
   validateComplaintImage,
   validateCoordinate,
+  validateOptionalContactPhone,
 } from "@/domains/complaints/validation";
 import type { AuthUser } from "@/lib/rbac";
 
@@ -82,6 +83,16 @@ async function testValidation() {
       ),
     "8 mb",
   );
+
+  assertThrows(
+    () => validateOptionalContactPhone("12345"),
+    "10-digit",
+  );
+  assert.equal(validateOptionalContactPhone(""), null);
+  assert.equal(validateOptionalContactPhone("   "), null);
+  assert.equal(validateOptionalContactPhone("9876543210"), "9876543210");
+  assert.equal(validateOptionalContactPhone("+919876543210"), "+919876543210");
+  assert.equal(validateOptionalContactPhone("+91 98765-43210"), "+919876543210");
 
   assertThrows(() => validateCoordinate("120", "latitude"), "between -90 and 90");
   assertThrows(() => validateCoordinate("abc", "longitude"), "valid number");
@@ -185,6 +196,7 @@ async function testValidUpload() {
   const photo = new File([tinyPng], "issue.png", { type: "image/png" });
   const created = await createCitizenComplaint(citizen, {
     photo,
+    category: "DAMAGED_FOOTPATH",
     description: "Broken footpath tile outside ward office entrance.",
     latitude: 28.6139,
     longitude: 77.209,
@@ -192,13 +204,15 @@ async function testValidUpload() {
 
   assert.ok(created.imageUrl.includes("blob.vercel-storage.com"));
   assert.equal(created.status, "SUBMITTED");
+  assert.equal(created.category, "DAMAGED_FOOTPATH");
 
-  const history = await prisma.complaintHistory.findFirst({
+  const history = await prisma.complaintHistory.findMany({
     where: { complaintId: created.id },
+    orderBy: { createdAt: "asc" },
   });
-  assert.ok(history);
-  assert.equal(history?.action, "SUBMITTED");
-  assert.equal(history?.toStatus, "SUBMITTED");
+  assert.ok(history.length >= 1);
+  assert.equal(history[0]?.action, "SUBMITTED");
+  assert.equal(history[0]?.newStatus, "SUBMITTED");
 
   await prisma.complaintHistory.deleteMany({ where: { complaintId: created.id } });
   await prisma.complaint.delete({ where: { id: created.id } });

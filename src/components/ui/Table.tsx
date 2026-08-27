@@ -5,11 +5,20 @@ export function Table({
   className,
   caption,
   children,
+  embedded = false,
   ...props
-}: HTMLAttributes<HTMLTableElement> & { caption?: string }) {
+}: HTMLAttributes<HTMLTableElement> & {
+  caption?: string;
+  embedded?: boolean;
+}) {
   return (
-    <div className="overflow-x-auto rounded-md border border-line bg-paper-raised">
-      <table className={cn("w-full min-w-[40rem] text-left text-small", className)} {...props}>
+    <div
+      className={cn(
+        "overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]",
+        !embedded && "rounded-md border border-line bg-paper-raised",
+      )}
+    >
+      <table className={cn("w-full min-w-[36rem] text-left text-small", className)} {...props}>
         {caption ? <caption className="sr-only">{caption}</caption> : null}
         {children}
       </table>
@@ -23,7 +32,7 @@ export function TableHeader({
 }: HTMLAttributes<HTMLTableSectionElement>) {
   return (
     <thead
-      className={cn("sticky top-0 bg-green-50 text-green-950", className)}
+      className={cn("sticky top-0 bg-brand-50 text-navy", className)}
       {...props}
     />
   );
@@ -41,7 +50,7 @@ export function TableRow({
   ...props
 }: HTMLAttributes<HTMLTableRowElement>) {
   return (
-    <tr className={cn("hover:bg-green-50/60", className)} {...props} />
+    <tr className={cn("hover:bg-brand-50/60", className)} {...props} />
   );
 }
 

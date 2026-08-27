@@ -1,6 +1,6 @@
 import { PageHeader } from "@/components/ui/PageHeader";
-import { Card } from "@/components/ui/Card";
-import { ReportIssueForm } from "@/components/citizen/ReportIssueForm";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
+import { LazyReportIssueForm } from "@/components/citizen/LazyReportIssueForm";
 
 export default function CitizenReportPage() {
   return (
@@ -8,11 +8,18 @@ export default function CitizenReportPage() {
       <PageHeader
         eyebrow="Citizen"
         title="Report an issue"
-        description="Upload a photograph, describe the problem, and share where it is located."
+        description="Pick a category, add a photo and description, then pin the location."
       />
-      <Card className="p-5 sm:p-6">
-        <ReportIssueForm />
+      <Card className="p-4 sm:p-6">
+        <CardHeader className="mb-4">
+          <CardTitle>New complaint</CardTitle>
+          <CardDescription>
+            Three short steps. You do not need to know which department handles it.
+          </CardDescription>
+        </CardHeader>
+        <LazyReportIssueForm />
       </Card>
     </div>
   );
 }
+

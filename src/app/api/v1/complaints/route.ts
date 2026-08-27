@@ -44,16 +44,20 @@ export async function POST(request: Request) {
   }
 
   const photo = formData.get("photo");
+  const category = formData.get("category");
   const description = formData.get("description");
   const latitude = formData.get("latitude");
   const longitude = formData.get("longitude");
+  const phone = formData.get("phone");
 
   try {
     const complaint = await createCitizenComplaint(gate.user, {
       photo: photo instanceof File ? photo : new File([], ""),
+      category,
       description,
       latitude,
       longitude,
+      phone,
     });
     return jsonOk({ complaint }, 201);
   } catch (error) {

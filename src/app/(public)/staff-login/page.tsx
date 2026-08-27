@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
 export default function StaffLoginPage() {
-  redirect("/login?callbackUrl=/staff");
+  redirect("/login?callbackUrl=/worker");
 }
