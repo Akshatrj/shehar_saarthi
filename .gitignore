@@ -25,10 +25,14 @@
 # Template only (placeholders, no secrets)
 !.env.example
 
-# debug
+# debug / local build captures
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+*.log
+build-log.txt
+build-output.txt
+build-output*.txt
 
 # typescript
 next-env.d.ts
@@ -36,4 +40,11 @@ next-env.d.ts
 
 # local evidence uploads (not for Vercel)
 /storage
-.env*
+
+# test / coverage
+/coverage
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store

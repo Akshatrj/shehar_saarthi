@@ -157,6 +157,9 @@ export async function getDepartmentAdminComplaintDetail(
       civicImpactScore: true,
       requiresManualReview: true,
       recommendedDepartmentName: true,
+      recommendedDepartment: {
+        select: { name: true },
+      },
       recommendedAction: true,
       priorityReason: true,
       recurringProblem: true,
@@ -213,7 +216,8 @@ export async function getDepartmentAdminComplaintDetail(
     priorityScore: row.priorityScore,
     civicImpactScore: row.civicImpactScore,
     requiresManualReview: row.requiresManualReview,
-    recommendedDepartmentName: row.recommendedDepartmentName,
+    recommendedDepartmentName:
+      row.recommendedDepartment?.name ?? row.recommendedDepartmentName,
     recommendedAction: row.recommendedAction,
     priorityReason: row.priorityReason,
     recurringProblem: row.recurringProblem,

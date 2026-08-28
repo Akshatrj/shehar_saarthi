@@ -1,9 +1,8 @@
 import { prisma } from "@/lib/db";
 import {
-  DEPARTMENT_SLUGS,
-  departmentSlugForCategory,
-  type DepartmentSlug,
-} from "@/domains/complaints/categories";
+  resolveDepartmentForCategory,
+  type RoutedDepartment,
+} from "@/domains/departments/routes";
 import {
   COMPLAINT_CATEGORIES,
   type ComplaintCategory,
@@ -16,6 +15,9 @@ export class CategoryRoutingError extends Error {
   }
 }
 
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 export function parseComplaintCategory(value: unknown): ComplaintCategory {
   if (typeof value !== "string") {
     throw new CategoryRoutingError("Please choose a valid category.");
@@ -27,50 +29,51 @@ export function parseComplaintCategory(value: unknown): ComplaintCategory {
   return normalized as ComplaintCategory;
 }
 
-export function parseDepartmentSlug(value: unknown): DepartmentSlug {
+export function parseDepartmentId(value: unknown): string {
   if (typeof value !== "string") {
     throw new CategoryRoutingError("Please choose a valid department.");
   }
-  const normalized = value.trim().toLowerCase();
-  if (!DEPARTMENT_SLUGS.includes(normalized as DepartmentSlug)) {
+  const id = value.trim();
+  if (!UUID_PATTERN.test(id)) {
     throw new CategoryRoutingError("Please choose a valid department.");
   }
-  return normalized as DepartmentSlug;
+  return id;
 }
 
 export async function resolveDepartmentIdForRouting(input: {
   category: ComplaintCategory;
-  manualDepartmentSlug?: string | null;
-}) {
-  const mappedSlug = departmentSlugForCategory(input.category);
-  const slug =
-    input.category === "OTHER"
-      ? parseDepartmentSlug(input.manualDepartmentSlug)
-      : mappedSlug;
+  departmentId?: string | null;
+}): Promise<RoutedDepartment> {
+  if (input.departmentId) {
+    const departmentId = parseDepartmentId(input.departmentId);
+    const department = await prisma.department.findFirst({
+      where: { id: departmentId, isActive: true },
+      select: { id: true, name: true, code: true, isActive: true },
+    });
+    if (!department) {
+      throw new CategoryRoutingError("The selected department is not available.");
+    }
 
-  if (!slug) {
+    if (input.category !== "OTHER") {
+      const mapped = await resolveDepartmentForCategory(input.category);
+      if (mapped && mapped.id !== department.id) {
+        throw new CategoryRoutingError(
+          "Department cannot be overridden for this category.",
+        );
+      }
+    }
+
+    return department;
+  }
+
+  const mapped = await resolveDepartmentForCategory(input.category);
+  if (!mapped) {
     throw new CategoryRoutingError(
-      "Please choose a department for the Other category.",
+      input.category === "OTHER"
+        ? "Please choose a department for the Other category."
+        : "No active department is configured for this complaint type.",
     );
   }
 
-  if (input.category !== "OTHER" && input.manualDepartmentSlug) {
-    const clientSlug = parseDepartmentSlug(input.manualDepartmentSlug);
-    if (clientSlug !== mappedSlug) {
-      throw new CategoryRoutingError(
-        "Department cannot be overridden for this category.",
-      );
-    }
-  }
-
-  const department = await prisma.department.findFirst({
-    where: { code: slug, isActive: true },
-    select: { id: true, name: true, code: true },
-  });
-
-  if (!department) {
-    throw new CategoryRoutingError("The selected department is not available.");
-  }
-
-  return department;
+  return mapped;
 }

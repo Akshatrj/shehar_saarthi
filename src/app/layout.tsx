@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Playfair_Display, Source_Sans_3 } from "next/font/google";
 import { AppProviders } from "@/components/providers/AppProviders";
+import { appOrigin } from "@/lib/app-origin";
 import "./globals.css";
+
 const sourceSans = Source_Sans_3({
   subsets: ["latin"],
   variable: "--font-source-sans",
@@ -16,6 +18,7 @@ const playfairDisplay = Playfair_Display({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(appOrigin()),
   title: {
     default: "SheharSaarthi",
     template: "%s · SheharSaarthi",

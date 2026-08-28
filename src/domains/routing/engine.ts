@@ -1,9 +1,6 @@
 import { prisma } from "@/lib/db";
-import {
-  CATEGORY_TO_DEPARTMENT_SLUG,
-  departmentSlugForCategory,
-  serviceTypeForCategory,
-} from "@/domains/complaints/categories";
+import { serviceTypeForCategory } from "@/domains/complaints/categories";
+import { resolveDepartmentForCategory } from "@/domains/departments/routes";
 import type { ComplaintCategory, ServiceType } from "@/domains/complaints/types";
 import type {
   RankedDepartmentRecommendation,
@@ -22,7 +19,7 @@ type DepartmentCandidate = {
 /**
  * Routing score weights:
  * - Category capability: required gate
- * - Primary mapping match: 100 (department code matches category default)
+ * - Primary mapping match: 100 (department is the configured CategoryRoute target)
  * - Workload: up to 50 (lower workload preferred)
  */
 const WEIGHTS = {
@@ -33,26 +30,32 @@ const WEIGHTS = {
 function supportsCategory(
   department: DepartmentCandidate,
   category: ComplaintCategory,
+  primaryDepartmentId: string | null,
 ): boolean {
-  if (department.supportedCategories.length > 0) {
-    return department.supportedCategories.includes(category);
+  if (primaryDepartmentId && department.id === primaryDepartmentId) {
+    return true;
   }
-  const slug = departmentSlugForCategory(category);
-  return slug === department.code;
+  return department.supportedCategories.includes(category);
 }
 
 function scoreDepartment(input: {
   department: DepartmentCandidate;
   category: ComplaintCategory;
+  primaryDepartmentId: string | null;
 }): RankedDepartmentRecommendation | null {
-  const categoryMatch = supportsCategory(input.department, input.category);
+  const categoryMatch = supportsCategory(
+    input.department,
+    input.category,
+    input.primaryDepartmentId,
+  );
   if (!categoryMatch || !input.department.isActive) {
     return null;
   }
 
-  const mappedSlug = departmentSlugForCategory(input.category);
   const primaryMappingScore =
-    mappedSlug === input.department.code ? WEIGHTS.primaryMapping : 0;
+    input.primaryDepartmentId === input.department.id
+      ? WEIGHTS.primaryMapping
+      : 0;
 
   const workloadScore = Math.max(
     0,
@@ -88,15 +91,18 @@ function scoreDepartment(input: {
 export function rankDepartmentsForComplaint(input: {
   category: ComplaintCategory;
   departments: DepartmentCandidate[];
+  primaryDepartmentId?: string | null;
   confidence?: number;
 }): RoutingRecommendationResult {
   const serviceType = serviceTypeForCategory(input.category);
+  const primaryDepartmentId = input.primaryDepartmentId ?? null;
 
   const ranked = input.departments
     .map((department) =>
       scoreDepartment({
         department,
         category: input.category,
+        primaryDepartmentId,
       }),
     )
     .filter((item): item is RankedDepartmentRecommendation => item !== null)
@@ -107,13 +113,12 @@ export function rankDepartmentsForComplaint(input: {
   }
 
   const top = ranked[0] ?? null;
-  const defaultSlug = CATEGORY_TO_DEPARTMENT_SLUG[input.category];
 
   let reason = "No suitable department found. Manual assignment required.";
   if (top) {
     reason = top.reason;
-  } else if (defaultSlug) {
-    reason = `No active department matched routing rules for ${input.category}. Expected department code: ${defaultSlug}.`;
+  } else {
+    reason = `No active department is configured for ${input.category.replaceAll("_", " ").toLowerCase()} complaints.`;
   }
 
   return {
@@ -161,10 +166,14 @@ export async function recommendRoutingForComplaint(input: {
   confidence?: number;
   aiAnalyzed?: boolean;
 }) {
-  const departments = await loadActiveDepartmentCandidates();
+  const [departments, primary] = await Promise.all([
+    loadActiveDepartmentCandidates(),
+    resolveDepartmentForCategory(input.category),
+  ]);
   const recommendation = rankDepartmentsForComplaint({
     category: input.category,
     departments,
+    primaryDepartmentId: primary?.id ?? null,
     confidence: input.confidence,
   });
 

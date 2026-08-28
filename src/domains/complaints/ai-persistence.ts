@@ -39,6 +39,7 @@ export async function saveComplaintAiAnalysis(
         civicImpactScore: analysis.civicImpactScore,
         requiresManualReview: analysis.requiresManualReview,
         prioritySource: analysis.prioritySource,
+        recommendedDepartmentId: analysis.recommendedDepartmentId,
         recommendedDepartmentName: analysis.recommendedDepartment,
         recommendedAction: analysis.recommendedAction,
         serviceType: serviceTypeForCategory(analysis.category as ComplaintCategory),

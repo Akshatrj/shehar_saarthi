@@ -38,8 +38,14 @@ export function CreateDepartmentForm() {
       <Input
         label="Code"
         name="code"
-        hint="Lowercase letters, numbers, and hyphens only."
+        hint="Short identifier. You can change this later; complaints stay linked by department ID."
         required
+        disabled={isPending}
+      />
+      <Input
+        label="Responsibilities"
+        name="description"
+        hint="Optional. Shown to admins as this department's brief."
         disabled={isPending}
       />
       <Button type="submit" size="sm" disabled={isPending}>
@@ -59,6 +65,7 @@ export function EditDepartmentForm({
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState(department.name);
   const [code, setCode] = useState(department.code);
+  const [description, setDescription] = useState(department.description ?? "");
   const [isActive, setIsActive] = useState(department.isActive);
 
   function onSubmit() {
@@ -66,6 +73,7 @@ export function EditDepartmentForm({
     const formData = new FormData();
     formData.set("name", name);
     formData.set("code", code);
+    formData.set("description", description);
     if (isActive) {
       formData.set("isActive", "on");
     }
@@ -96,6 +104,13 @@ export function EditDepartmentForm({
         value={code}
         disabled={isPending}
         onChange={(event) => setCode(event.target.value)}
+      />
+      <Input
+        label="Responsibilities"
+        name="description"
+        value={description}
+        disabled={isPending}
+        onChange={(event) => setDescription(event.target.value)}
       />
       <label className="inline-flex items-center gap-2 text-small text-ink">
         <input

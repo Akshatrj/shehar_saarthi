@@ -4,6 +4,7 @@ import {
   CreateDepartmentForm,
   EditDepartmentForm,
 } from "@/components/admin/DepartmentForms";
+import { CategoryRoutingForm } from "@/components/admin/CategoryRoutingForm";
 import {
   Table,
   TableBody,
@@ -12,7 +13,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/Table";
-import { listAdminDepartments } from "@/domains/admin/departments";
+import {
+  listAdminDepartments,
+  listCategoryRouting,
+} from "@/domains/admin/departments";
 import { requireSuperAdmin } from "@/lib/auth/require";
 
 function formatDate(value: string) {
@@ -24,20 +28,34 @@ function formatDate(value: string) {
 
 export default async function AdminDepartmentsPage() {
   const actor = await requireSuperAdmin();
-  const departments = await listAdminDepartments(actor);
+  const [departments, routes] = await Promise.all([
+    listAdminDepartments(actor),
+    listCategoryRouting(actor),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         eyebrow="Super Admin"
         title="Departments"
-        description="Create, edit, and activate municipal departments."
+        description="Rename, activate, and route complaint categories to departments. Relationships use department ID, so a rename does not break existing complaints or admins."
       />
 
       <Card className="p-5">
         <h2 className="text-h3 text-navy">Create department</h2>
         <div className="mt-4 max-w-md">
           <CreateDepartmentForm />
+        </div>
+      </Card>
+
+      <Card className="p-5">
+        <h2 className="text-h3 text-navy">Category routing</h2>
+        <p className="mt-1 text-small text-muted">
+          Each complaint type is assigned to a department by ID. Changing a
+          department name keeps this mapping.
+        </p>
+        <div className="mt-4">
+          <CategoryRoutingForm routes={routes} departments={departments} />
         </div>
       </Card>
 

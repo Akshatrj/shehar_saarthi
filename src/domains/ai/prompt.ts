@@ -33,15 +33,15 @@ Return compact JSON only with these keys:
 category, categoryConfidence, description, evidenceConsistency, evidenceConfidence, evidenceReason,
 safetyRiskScore, publicImpactScore, urgencyScore, essentialServiceImpactScore,
 infrastructureSeverityScore, healthEnvironmentalRiskScore, civicImpactScore,
-priorityReason, recommendedDepartment, recommendedAction
+priorityReason, recommendedAction
 
 Rules:
 - category must be one of the enum keys above
 - evidenceConsistency: CONSISTENT | POTENTIAL_MISMATCH | NEEDS_REVIEW | INCONCLUSIVE
 - scores are integers 0-100
 - categoryConfidence and evidenceConfidence are 0-1 decimals
-- recommendedDepartment must be one of: Roads, Sanitation, Electrical, Water, Parks
 - recommendedAction: STANDARD_ROUTING or PRIORITY_ROUTING or NEEDS_REVIEW
+- Do not assign a municipal department. Routing is configured separately.
 - Keep description to one concise sentence
 - Do not invent statistics or news beyond the summaries provided`;
 }

@@ -1,7 +1,5 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import {
   COMPULSORY_MESSAGE,
   hasWizardProgress,
@@ -12,36 +10,7 @@ import {
   validateOptionalContactPhone,
 } from "@/domains/complaints/validation";
 import type { AuthUser } from "@/lib/rbac";
-
-function loadEnvLocal() {
-  const envPath = resolve(process.cwd(), ".env.local");
-  try {
-    const envFile = readFileSync(envPath, "utf8");
-    for (const line of envFile.split(/\r?\n/)) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith("#")) {
-        continue;
-      }
-      const eq = trimmed.indexOf("=");
-      if (eq === -1) {
-        continue;
-      }
-      const key = trimmed.slice(0, eq).trim();
-      let value = trimmed.slice(eq + 1).trim();
-      if (
-        (value.startsWith('"') && value.endsWith('"')) ||
-        (value.startsWith("'") && value.endsWith("'"))
-      ) {
-        value = value.slice(1, -1);
-      }
-      if (!process.env[key]) {
-        process.env[key] = value;
-      }
-    }
-  } catch {
-    // optional .env.local
-  }
-}
+import { loadEnvLocal } from "./test-fixtures";
 
 const emptyWizard = {
   photo: null,
@@ -143,16 +112,20 @@ async function testDeleteAuthorization() {
     deleteDepartmentComplaint,
     requireDepartmentAdminContext,
   } = await import("@/domains/complaints/department-admin-service");
+  const {
+    beginDepartmentTest,
+    createTestDepartment,
+    finishDepartmentTest,
+  } = await import("./test-fixtures");
 
-  const roads = await prisma.department.findFirst({
-    where: { code: "roads" },
-    select: { id: true },
+  const harness = await beginDepartmentTest(prisma);
+  try {
+  const homeDept = await createTestDepartment(harness, {
+    categories: ["POTHOLE"],
   });
-  const water = await prisma.department.findFirst({
-    where: { code: "water" },
-    select: { id: true },
+  const otherDept = await createTestDepartment(harness, {
+    categories: ["WATER_LEAKAGE"],
   });
-  assert.ok(roads, "roads department required");
 
   const owner: AuthUser = {
     id: randomUUID(),
@@ -183,7 +156,7 @@ async function testDeleteAuthorization() {
     email: `ux-dept-${randomUUID()}@test.local`,
     name: "UX Dept Admin",
     role: "DEPARTMENT_ADMIN",
-    departmentId: roads.id,
+    departmentId: homeDept.id,
     isActive: true,
   };
   const otherDeptAdmin: AuthUser = {
@@ -191,7 +164,7 @@ async function testDeleteAuthorization() {
     email: `ux-dept-other-${randomUUID()}@test.local`,
     name: "UX Other Dept",
     role: "DEPARTMENT_ADMIN",
-    departmentId: water?.id ?? roads.id,
+    departmentId: otherDept.id,
     isActive: true,
   };
 
@@ -210,7 +183,7 @@ async function testDeleteAuthorization() {
         email: deptAdmin.email,
         name: deptAdmin.name ?? "Dept",
         role: "DEPARTMENT_ADMIN",
-        departmentId: roads.id,
+        departmentId: homeDept.id,
       },
       {
         id: otherDeptAdmin.id,
@@ -221,13 +194,20 @@ async function testDeleteAuthorization() {
       },
     ],
   });
+  harness.userIds.push(
+    owner.id,
+    other.id,
+    superAdmin.id,
+    deptAdmin.id,
+    otherDeptAdmin.id,
+  );
 
   async function createComplaint(status: "SUBMITTED" | "COMPLETED" | "ROUTED") {
-    return prisma.complaint.create({
+    const row = await prisma.complaint.create({
       data: {
         publicRef: `SS-UX-${Math.floor(Math.random() * 900000 + 100000)}`,
         citizenId: owner.id,
-        departmentId: status === "SUBMITTED" ? null : roads.id,
+        departmentId: status === "SUBMITTED" ? null : homeDept.id,
         description: "UX cancel/delete test complaint.",
         imageUrl: "https://example.com/ux-test.jpg",
         latitude: 28.6139,
@@ -238,6 +218,8 @@ async function testDeleteAuthorization() {
       },
       select: { id: true },
     });
+    harness.complaintIds.push(row.id);
+    return row;
   }
 
   const otherOwned = await createComplaint("SUBMITTED");
@@ -295,16 +277,17 @@ async function testDeleteAuthorization() {
       email: `ux-worker-${randomUUID()}@test.local`,
       name: "UX Worker",
       role: "WORKER",
-      departmentId: roads.id,
+      departmentId: homeDept.id,
       isActive: true,
     },
     select: { id: true },
   });
+  harness.userIds.push(worker.id);
   const closed = await prisma.complaint.create({
     data: {
       publicRef: `SS-UX-${Math.floor(Math.random() * 900000 + 100000)}`,
       citizenId: owner.id,
-      departmentId: roads.id,
+      departmentId: homeDept.id,
       assignedWorkerId: worker.id,
       description: "UX reopen closed complaint.",
       imageUrl: "https://example.com/ux-closed.jpg",
@@ -315,6 +298,7 @@ async function testDeleteAuthorization() {
     },
     select: { id: true },
   });
+  harness.complaintIds.push(closed.id);
   await reopenCitizenComplaint(
     owner,
     closed.id,
@@ -362,14 +346,12 @@ async function testDeleteAuthorization() {
 
   const deptTarget = await createComplaint("ROUTED");
   const deptContext = requireDepartmentAdminContext(deptAdmin);
-  if (water && otherDeptAdmin.departmentId !== roads.id) {
-    const foreignContext = requireDepartmentAdminContext(otherDeptAdmin);
-    await assert.rejects(
-      () => deleteDepartmentComplaint(foreignContext, deptTarget.id),
-      (error: unknown) =>
-        error instanceof DepartmentAdminError && /not found/i.test(error.message),
-    );
-  }
+  const foreignContext = requireDepartmentAdminContext(otherDeptAdmin);
+  await assert.rejects(
+    () => deleteDepartmentComplaint(foreignContext, deptTarget.id),
+    (error: unknown) =>
+      error instanceof DepartmentAdminError && /not found/i.test(error.message),
+  );
   await deleteDepartmentComplaint(deptContext, deptTarget.id);
   assert.equal(
     await prisma.complaint.findUnique({ where: { id: deptTarget.id } }),
@@ -379,21 +361,9 @@ async function testDeleteAuthorization() {
   await deleteComplaintAndStorage(otherOwned.id);
   await deleteComplaintAndStorage(completed.id).catch(() => undefined);
   await deleteComplaintAndStorage(closed.id).catch(() => undefined);
-
-  await prisma.user.deleteMany({
-    where: {
-      id: {
-        in: [
-          owner.id,
-          other.id,
-          superAdmin.id,
-          deptAdmin.id,
-          otherDeptAdmin.id,
-          worker.id,
-        ],
-      },
-    },
-  });
+  } finally {
+    await finishDepartmentTest(harness);
+  }
 }
 
 async function main() {

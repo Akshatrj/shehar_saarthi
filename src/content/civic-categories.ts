@@ -10,6 +10,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+/** Landing-page civic themes. These ids are not Department records. */
 export type CivicCategory = {
   id: string;
   title: string;

@@ -6,7 +6,6 @@ import { overrideComplaintAction } from "@/app/admin/actions";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
-import { departmentSlugForCategory } from "@/domains/complaints/categories";
 import {
   COMPLAINT_CATEGORIES,
   COMPLAINT_CATEGORY_LABELS,
@@ -26,6 +25,7 @@ function defaultCategory(complaint: AdminComplaintDetail) {
 function defaultDepartmentId(
   complaint: AdminComplaintDetail,
   departments: Array<{ id: string; name: string; code: string }>,
+  categoryRoutes: Record<string, string>,
 ) {
   if (complaint.department?.id) {
     return complaint.department.id;
@@ -34,23 +34,27 @@ function defaultDepartmentId(
     | ComplaintCategory
     | null;
   if (!category) return "";
-  const slug = departmentSlugForCategory(category);
-  if (!slug) return "";
-  return departments.find((department) => department.code === slug)?.id ?? "";
+  const routedId = categoryRoutes[category];
+  if (routedId && departments.some((department) => department.id === routedId)) {
+    return routedId;
+  }
+  return "";
 }
 
 export function ComplaintOverrideForm({
   complaint,
   departments,
+  categoryRoutes,
 }: {
   complaint: AdminComplaintDetail;
   departments: Array<{ id: string; name: string; code: string }>;
+  categoryRoutes: Record<string, string>;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [category, setCategory] = useState(defaultCategory(complaint));
   const [departmentId, setDepartmentId] = useState(
-    defaultDepartmentId(complaint, departments),
+    defaultDepartmentId(complaint, departments, categoryRoutes),
   );
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -86,10 +90,9 @@ export function ComplaintOverrideForm({
         onChange={(event) => {
           const nextCategory = event.target.value as ComplaintCategory;
           setCategory(nextCategory);
-          const slug = departmentSlugForCategory(nextCategory);
-          if (slug) {
-            const match = departments.find((department) => department.code === slug);
-            if (match) setDepartmentId(match.id);
+          const routedId = categoryRoutes[nextCategory];
+          if (routedId && departments.some((department) => department.id === routedId)) {
+            setDepartmentId(routedId);
           }
         }}
       />

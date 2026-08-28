@@ -40,7 +40,6 @@ function testParse() {
       healthEnvironmentalRiskScore: 65,
       civicImpactScore: 72,
       priorityReason: "Sanitation risk in public area.",
-      recommendedDepartment: "Sanitation",
       recommendedAction: "STANDARD_ROUTING",
     }),
   );

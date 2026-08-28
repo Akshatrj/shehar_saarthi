@@ -14,7 +14,7 @@ export function SidebarLinks({ items }: { items: NavItem[] }) {
         const active =
           pathname === item.href ||
           (item.href !== "/admin" &&
-            item.href !== "/dashboard" &&
+            item.href !== "/citizen" &&
             item.href !== "/worker" &&
             item.href !== "/department-admin" &&
             pathname.startsWith(item.href));

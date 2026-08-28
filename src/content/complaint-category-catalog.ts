@@ -10,7 +10,8 @@ export type ComplaintCategoryGroup = {
   }[];
 };
 
-/** Citizen-facing complaint categories grouped for the report form. */
+/** Citizen-facing complaint categories grouped for the report form.
+ * Group ids (e.g. "roads") are UI grouping keys, not department identity. */
 export const COMPLAINT_CATEGORY_CATALOG: ComplaintCategoryGroup[] = [
   {
     id: "roads",

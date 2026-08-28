@@ -5,7 +5,7 @@ import {
 } from "@/domains/complaints/types";
 import type { EvidenceConsistency, GeminiRawAnalysis } from "@/domains/ai/types";
 import { clampConfidence, clampScore } from "@/domains/ai/priority";
-import { DEPARTMENT_NAMES, DEPARTMENT_SLUGS, serviceTypeForCategory } from "@/domains/complaints/categories";
+import { serviceTypeForCategory } from "@/domains/complaints/categories";
 import type { ServiceType } from "@/domains/complaints/types";
 
 const CATEGORY_SET = new Set<string>(COMPLAINT_CATEGORIES);
@@ -16,7 +16,15 @@ const EVIDENCE_VALUES = new Set<EvidenceConsistency>([
   "INCONCLUSIVE",
 ]);
 
-const DEPARTMENT_NAMES_SET = new Set<string>(Object.values(DEPARTMENT_NAMES));
+const SERVICE_TYPE_SET = new Set<string>([
+  "ROADS",
+  "STREET_LIGHTING",
+  "SANITATION",
+  "WATER",
+  "DRAINAGE",
+  "PARKS",
+  "OTHER",
+]);
 
 const LABEL_TO_ENUM = Object.fromEntries(
   Object.entries(COMPLAINT_CATEGORY_LABELS).map(([key, label]) => [
@@ -64,16 +72,6 @@ function normalizeEvidence(value: unknown): EvidenceConsistency {
   return EVIDENCE_VALUES.has(upper) ? upper : "INCONCLUSIVE";
 }
 
-const SERVICE_TYPE_SET = new Set<string>([
-  "ROADS",
-  "STREET_LIGHTING",
-  "SANITATION",
-  "WATER",
-  "DRAINAGE",
-  "PARKS",
-  "OTHER",
-]);
-
 function normalizeServiceType(value: unknown, category: ComplaintCategory): ServiceType {
   if (typeof value === "string") {
     const upper = value.trim().toUpperCase().replace(/\s+/g, "_");
@@ -91,17 +89,11 @@ function normalizeClassificationReason(value: unknown, description: string): str
   return description.slice(0, 500);
 }
 
-function normalizeDepartment(value: unknown): string {
+function normalizeDepartmentHint(value: unknown): string {
   if (typeof value !== "string" || !value.trim()) {
-    return DEPARTMENT_NAMES.roads;
+    return "";
   }
-  const trimmed = value.trim();
-  if (DEPARTMENT_NAMES_SET.has(trimmed)) return trimmed;
-  const slug = trimmed.toLowerCase().replace(/\s+/g, "");
-  const fromSlug = DEPARTMENT_SLUGS.find(
-    (item) => item === slug || DEPARTMENT_NAMES[item] === trimmed,
-  );
-  return fromSlug ? DEPARTMENT_NAMES[fromSlug] : DEPARTMENT_NAMES.roads;
+  return value.trim().slice(0, 80);
 }
 
 function extractJsonObject(text: string): unknown {
@@ -172,7 +164,7 @@ export function parseGeminiAnalysisOutput(raw: string): GeminiRawAnalysis {
       normalizeDescription(record.description),
     ),
     serviceType: normalizeServiceType(record.serviceType, category),
-    recommendedDepartment: normalizeDepartment(record.recommendedDepartment),
+    recommendedDepartment: normalizeDepartmentHint(record.recommendedDepartment),
     recommendedAction:
       typeof record.recommendedAction === "string" && record.recommendedAction.trim()
         ? record.recommendedAction.trim().slice(0, 120)

@@ -20,8 +20,7 @@ import type {
   ClassificationResult,
   ComplaintAnalysisInput,
 } from "@/domains/ai/types";
-import { departmentSlugForCategory } from "@/domains/complaints/categories";
-import { DEPARTMENT_NAMES } from "@/domains/complaints/categories";
+import { resolveDepartmentForCategory } from "@/domains/departments/routes";
 import type { ComplaintCategory } from "@/domains/complaints/types";
 
 export { ClassificationProviderError };
@@ -103,8 +102,7 @@ export async function analyzeComplaint(
       evidenceConsistency: parsed.evidenceConsistency,
     });
 
-    const slug = departmentSlugForCategory(category);
-    const mappedDepartment = slug ? DEPARTMENT_NAMES[slug] : null;
+    const routed = await resolveDepartmentForCategory(category);
 
     return {
       available: true,
@@ -132,7 +130,8 @@ export async function analyzeComplaint(
       priorityReason: parsed.priorityReason,
       classificationReason: parsed.classificationReason,
       serviceType: parsed.serviceType,
-      recommendedDepartment: mappedDepartment ?? parsed.recommendedDepartment,
+      recommendedDepartmentId: routed?.id ?? null,
+      recommendedDepartment: routed?.name ?? "",
       recommendedAction: parsed.recommendedAction,
       requiresManualReview: reviewRequired,
       prioritySource: "AI",

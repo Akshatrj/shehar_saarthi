@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { AuthenticatedShell } from "@/components/layout/AuthenticatedShell";
+import { PRIVATE_PAGE_ROBOTS } from "@/lib/app-origin";
 import { requireCitizen } from "@/lib/auth/require";
 
 export const metadata: Metadata = {
   title: "Citizen portal",
+  robots: PRIVATE_PAGE_ROBOTS,
 };
 
 export default async function CitizenLayout({

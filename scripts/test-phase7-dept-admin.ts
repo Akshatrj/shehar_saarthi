@@ -1,7 +1,5 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { prisma } from "@/lib/db";
 import {
   assignComplaintToWorker,
@@ -14,29 +12,12 @@ import {
 import { getDashboardAnalytics } from "@/domains/complaints/dashboard-analytics";
 import type { AuthUser } from "@/lib/rbac";
 
-function loadEnvLocal() {
-  const envPath = resolve(process.cwd(), ".env.local");
-  try {
-    const envFile = readFileSync(envPath, "utf8");
-    for (const line of envFile.split(/\r?\n/)) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith("#")) continue;
-      const eq = trimmed.indexOf("=");
-      if (eq === -1) continue;
-      const key = trimmed.slice(0, eq).trim();
-      let value = trimmed.slice(eq + 1).trim();
-      if (
-        (value.startsWith('"') && value.endsWith('"')) ||
-        (value.startsWith("'") && value.endsWith("'"))
-      ) {
-        value = value.slice(1, -1);
-      }
-      if (!process.env[key]) process.env[key] = value;
-    }
-  } catch {
-    // optional
-  }
-}
+import {
+  beginDepartmentTest,
+  createTestDepartment,
+  finishDepartmentTest,
+  loadEnvLocal,
+} from "./test-fixtures";
 
 async function main() {
   loadEnvLocal();
@@ -46,17 +27,10 @@ async function main() {
     return;
   }
 
-  const roads = await prisma.department.findFirst({
-    where: { code: "roads" },
-    select: { id: true },
-  });
-  assert.ok(roads, "roads department required");
-
-  const parks = await prisma.department.findFirst({
-    where: { code: "parks" },
-    select: { id: true },
-  });
-  assert.ok(parks, "parks department required");
+  const harness = await beginDepartmentTest(prisma);
+  try {
+  const roads = await createTestDepartment(harness, { categories: ["POTHOLE"] });
+  const parks = await createTestDepartment(harness, { categories: ["FALLEN_TREE"] });
 
   const admin: AuthUser = {
     id: randomUUID(),
@@ -86,6 +60,7 @@ async function main() {
       isActive: true,
     },
   });
+  harness.userIds.push(admin.id, worker.id);
 
   const citizen = await prisma.user.create({
     data: {
@@ -111,6 +86,7 @@ async function main() {
     },
     select: { id: true },
   });
+  harness.complaintIds.push(complaint.id);
 
   const adminContext = requireDepartmentAdminContext(admin);
 
@@ -122,6 +98,7 @@ async function main() {
   });
   assert.equal(createdWorker.role, "WORKER");
   assert.equal(createdWorker.departmentId, roads.id);
+  harness.userIds.push(createdWorker.id);
 
   try {
     await createDepartmentWorker(adminContext, {
@@ -161,9 +138,10 @@ async function main() {
     },
     select: { id: true },
   });
+  harness.complaintIds.push(parksComplaint.id);
+  harness.userIds.push(admin.id, worker.id, citizen.id);
 
   await assignComplaintToWorker(adminContext, complaint.id, worker.id);
-
   try {
     await assignComplaintToWorker(adminContext, complaint.id, worker.id);
     assert.fail("expected assigning the same worker again to fail");
@@ -222,6 +200,9 @@ async function main() {
   await prisma.user.deleteMany({
     where: { id: { in: [admin.id, worker.id, citizen.id, createdWorker.id] } },
   });
+  } finally {
+    await finishDepartmentTest(harness);
+  }
 
   console.log("phase7 department admin tests passed");
 }

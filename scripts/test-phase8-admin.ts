@@ -13,12 +13,17 @@ import { listAdminComplaints, overrideAdminComplaint } from "@/domains/admin/com
 import { listAdminDepartments } from "@/domains/admin/departments";
 import { AdminError } from "@/domains/admin/auth";
 import { verifyPassword } from "@/domains/auth/password";
+import type { AuthUser } from "@/lib/rbac";
 import {
   createDepartmentWorker,
   listDepartmentWorkers,
   requireDepartmentAdminContext,
 } from "@/domains/complaints/department-admin-service";
-import type { AuthUser } from "@/lib/rbac";
+import {
+  beginDepartmentTest,
+  createTestDepartment,
+  finishDepartmentTest,
+} from "./test-fixtures";
 
 async function main() {
   const citizen: AuthUser = {
@@ -58,13 +63,13 @@ async function main() {
   const users = await listAdminUsers(admin, 1);
   assert.ok(Array.isArray(users.users));
 
-  const departments = await listAdminDepartments(admin);
-  assert.ok(departments.length > 0);
+  const harness = await beginDepartmentTest(prisma);
+  try {
+  const roads = await createTestDepartment(harness, { categories: ["POTHOLE"] });
+  const parks = await createTestDepartment(harness, { categories: ["FALLEN_TREE"] });
 
-  const roads = departments.find((department) => department.code === "roads");
-  const parks = departments.find((department) => department.code === "parks");
-  assert.ok(roads, "roads department required");
-  assert.ok(parks, "parks department required");
+  const departments = await listAdminDepartments(admin);
+  assert.ok(departments.some((department) => department.id === roads.id));
 
   await assert.rejects(
     () =>
@@ -101,6 +106,7 @@ async function main() {
   });
   assert.equal(createdByAdmin.role, "WORKER");
   assert.equal(createdByAdmin.departmentId, roads.id);
+  harness.userIds.push(createdByAdmin.id);
 
   const stored = await prisma.user.findUnique({
     where: { id: createdByAdmin.id },
@@ -122,6 +128,7 @@ async function main() {
     departmentId: parks.id,
   });
   assert.equal(createdForParks.departmentId, parks.id);
+  harness.userIds.push(createdForParks.id);
   assert.equal(
     (await listDepartmentWorkers(roads.id)).some(
       (worker) => worker.id === createdForParks.id,
@@ -165,6 +172,7 @@ async function main() {
   assert.equal(createdByDeptAdmin.role, "WORKER");
   assert.equal(createdByDeptAdmin.departmentId, roads.id);
   assert.equal(createdByDeptAdmin.departmentId, createdByAdmin.departmentId);
+  harness.userIds.push(createdByDeptAdmin.id);
 
   const listedAfterBoth = await listAdminUsers(admin, 1);
   assert.ok(listedAfterBoth.users.some((user) => user.id === createdByAdmin.id));
@@ -247,6 +255,7 @@ async function main() {
     },
     select: { id: true },
   });
+  harness.userIds.push(citizenWithComplaint.id);
   const complaint = await prisma.complaint.create({
     data: {
       publicRef: `TST-${randomUUID().slice(0, 8)}`,
@@ -259,6 +268,7 @@ async function main() {
     },
     select: { id: true },
   });
+  harness.complaintIds.push(complaint.id);
 
   await assert.rejects(
     () => deleteAdminUser(admin, citizenWithComplaint.id),
@@ -271,6 +281,9 @@ async function main() {
 
   await prisma.complaint.delete({ where: { id: complaint.id } });
   await prisma.user.delete({ where: { id: citizenWithComplaint.id } });
+  } finally {
+    await finishDepartmentTest(harness);
+  }
 
   const complaints = await listAdminComplaints(admin, {});
   assert.ok(Array.isArray(complaints.complaints));

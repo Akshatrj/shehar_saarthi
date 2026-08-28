@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { LandingPage } from "@/components/public/LandingPage";
+import { appOrigin } from "@/lib/app-origin";
 
 export const metadata: Metadata = {
   title: {
@@ -31,6 +32,7 @@ const jsonLd = {
   description:
     "Civic issue reporting and resolution platform for citizens and municipalities.",
   slogan: "Your City. Your Voice. Your Change.",
+  url: appOrigin(),
 };
 
 export default function HomePage() {

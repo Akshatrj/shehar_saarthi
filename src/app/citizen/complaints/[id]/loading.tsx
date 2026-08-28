@@ -1,5 +1,5 @@
-import { CitizenComplaintDetailSkeleton } from "@/components/citizen/CitizenComplaintDetailSkeleton";
+import { ComplaintDetailSkeleton } from "@/components/complaints/ComplaintDetailSkeleton";
 
 export default function CitizenComplaintDetailLoading() {
-  return <CitizenComplaintDetailSkeleton />;
+  return <ComplaintDetailSkeleton />;
 }

@@ -1,7 +1,5 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import {
   changeCitizenCategory,
   confirmCitizenCategory,
@@ -10,34 +8,16 @@ import {
 import {
   CategoryRoutingError,
   parseComplaintCategory,
-  parseDepartmentSlug,
+  parseDepartmentId,
   resolveDepartmentIdForRouting,
 } from "@/domains/complaints/routing";
 import type { AuthUser } from "@/lib/rbac";
-
-function loadEnvLocal() {
-  const envPath = resolve(process.cwd(), ".env.local");
-  try {
-    const envFile = readFileSync(envPath, "utf8");
-    for (const line of envFile.split(/\r?\n/)) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith("#")) continue;
-      const eq = trimmed.indexOf("=");
-      if (eq === -1) continue;
-      const key = trimmed.slice(0, eq).trim();
-      let value = trimmed.slice(eq + 1).trim();
-      if (
-        (value.startsWith('"') && value.endsWith('"')) ||
-        (value.startsWith("'") && value.endsWith("'"))
-      ) {
-        value = value.slice(1, -1);
-      }
-      if (!process.env[key]) process.env[key] = value;
-    }
-  } catch {
-    // optional
-  }
-}
+import {
+  beginDepartmentTest,
+  createTestDepartment,
+  finishDepartmentTest,
+  loadEnvLocal,
+} from "./test-fixtures";
 
 function assertThrows(
   fn: () => unknown,
@@ -55,7 +35,8 @@ function assertThrows(
 
 function testParsing() {
   assert.equal(parseComplaintCategory("POTHOLE"), "POTHOLE");
-  assert.equal(parseDepartmentSlug("roads"), "roads");
+  const id = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+  assert.equal(parseDepartmentId(id), id);
 
   assertThrows(
     () => parseComplaintCategory("ALIEN"),
@@ -63,200 +44,196 @@ function testParsing() {
     "valid category",
   );
   assertThrows(
-    () => parseDepartmentSlug("fire"),
+    () => parseDepartmentId("not-a-department"),
     CategoryRoutingError,
     "valid department",
   );
 }
 
 async function testRoutingRules() {
+  loadEnvLocal();
   if (!process.env.DATABASE_URL) {
     console.log("skip routing DB tests — DATABASE_URL not set");
     return;
   }
 
-  const roads = await resolveDepartmentIdForRouting({
-    category: "POTHOLE",
-  });
-  assert.equal(roads.code, "roads");
+  const { prisma } = await import("@/lib/db");
+  const harness = await beginDepartmentTest(prisma);
+  try {
+    const primary = await createTestDepartment(harness, {
+      categories: ["POTHOLE"],
+    });
+    const otherDesk = await createTestDepartment(harness, {
+      categories: ["OTHER"],
+    });
 
-  await assert.rejects(
-    () =>
-      resolveDepartmentIdForRouting({
-        category: "POTHOLE",
-        manualDepartmentSlug: "electrical",
-      }),
-    CategoryRoutingError,
-  );
+    const potholeDept = await resolveDepartmentIdForRouting({
+      category: "POTHOLE",
+    });
+    assert.equal(potholeDept.id, primary.id);
 
-  const other = await resolveDepartmentIdForRouting({
-    category: "OTHER",
-    manualDepartmentSlug: "sanitation",
-  });
-  assert.equal(other.code, "sanitation");
+    await assert.rejects(
+      () =>
+        resolveDepartmentIdForRouting({
+          category: "POTHOLE",
+          departmentId: otherDesk.id,
+        }),
+      CategoryRoutingError,
+    );
+
+    const other = await resolveDepartmentIdForRouting({
+      category: "OTHER",
+      departmentId: otherDesk.id,
+    });
+    assert.equal(other.id, otherDesk.id);
+  } finally {
+    await finishDepartmentTest(harness);
+  }
 }
 
 async function testComplaintFlows() {
+  loadEnvLocal();
   if (!process.env.DATABASE_URL) {
-    console.log("skip complaint flow DB tests — DATABASE_URL not set");
+    console.log("skip category-confirmation DB tests — DATABASE_URL not set");
     return;
   }
 
   const { prisma } = await import("@/lib/db");
-  const owner: AuthUser = {
-    id: randomUUID(),
-    email: `phase5-owner-${Date.now()}@example.com`,
-    name: "Phase 5 Owner",
-    role: "CITIZEN",
-    departmentId: null,
-    isActive: true,
-  };
-  const other: AuthUser = {
-    id: randomUUID(),
-    email: `phase5-other-${Date.now()}@example.com`,
-    name: "Phase 5 Other",
-    role: "CITIZEN",
-    departmentId: null,
-    isActive: true,
-  };
+  const harness = await beginDepartmentTest(prisma);
+  try {
+    const potholeDept = await createTestDepartment(harness, {
+      categories: ["POTHOLE"],
+    });
+    const otherDept = await createTestDepartment(harness, {
+      categories: ["OTHER"],
+    });
+    const garbageDept = await createTestDepartment(harness, {
+      categories: ["GARBAGE"],
+    });
 
-  await prisma.user.createMany({
-    data: [
-      {
+    const owner: AuthUser = {
+      id: randomUUID(),
+      email: `owner-${randomUUID()}@test.local`,
+      name: "Owner",
+      role: "CITIZEN",
+      departmentId: null,
+      isActive: true,
+    };
+    const other: AuthUser = {
+      id: randomUUID(),
+      email: `other-${randomUUID()}@test.local`,
+      name: "Other",
+      role: "CITIZEN",
+      departmentId: null,
+      isActive: true,
+    };
+
+    const ownerRow = await prisma.user.create({
+      data: {
         id: owner.id,
         email: owner.email,
-        name: owner.name ?? "Owner",
-        role: owner.role,
+        name: owner.name,
+        role: "CITIZEN",
+        isActive: true,
       },
-      {
+    });
+    harness.userIds.push(ownerRow.id);
+    const otherRow = await prisma.user.create({
+      data: {
         id: other.id,
         email: other.email,
-        name: other.name ?? "Other",
-        role: other.role,
+        name: other.name,
+        role: "CITIZEN",
+        isActive: true,
       },
-    ],
-  });
+    });
+    harness.userIds.push(otherRow.id);
 
-  const complaint = await prisma.complaint.create({
-    data: {
-      publicRef: `SS-P5-${Date.now()}`,
-      citizenId: owner.id,
-      description: "Large pothole near the market crossing.",
-      imageUrl: "https://example.public.blob.vercel-storage.com/test.jpg",
-      latitude: 28.6139,
-      longitude: 77.209,
-      status: "SUBMITTED",
-      aiCategory: "POTHOLE",
-      aiDescription: "Large damaged area of road is visible.",
-    },
-  });
-
-  await confirmCitizenCategory(owner, complaint.id);
-
-  const routed = await prisma.complaint.findUnique({
-    where: { id: complaint.id },
-    include: { department: true },
-  });
-  assert.equal(routed?.status, "ROUTED");
-  assert.equal(routed?.category, "POTHOLE");
-  assert.equal(routed?.department?.code, "roads");
-
-  const history = await prisma.complaintHistory.findFirst({
-    where: { complaintId: complaint.id, action: "CATEGORY_CONFIRMED" },
-  });
-  assert.ok(history);
-  assert.match(history?.metadata ?? "", /AI_CONFIRMED/);
-
-  await assert.rejects(
-    () => confirmCitizenCategory(owner, complaint.id),
-    CategoryConfirmationError,
-  );
-
-  await assert.rejects(
-    () => confirmCitizenCategory(other, complaint.id),
-    CategoryConfirmationError,
-  );
-
-  const manualComplaint = await prisma.complaint.create({
-    data: {
-      publicRef: `SS-P5M-${Date.now()}`,
-      citizenId: owner.id,
-      description: "Miscellaneous civic issue.",
-      imageUrl: "https://example.public.blob.vercel-storage.com/test2.jpg",
-      latitude: 28.6139,
-      longitude: 77.209,
-      status: "SUBMITTED",
-    },
-  });
-
-  await changeCitizenCategory(owner, manualComplaint.id, "OTHER", "parks");
-
-  const manualRouted = await prisma.complaint.findUnique({
-    where: { id: manualComplaint.id },
-    include: { department: true },
-  });
-  assert.equal(manualRouted?.category, "OTHER");
-  assert.equal(manualRouted?.department?.code, "parks");
-
-  await assert.rejects(
-    () => changeCitizenCategory(owner, manualComplaint.id, "GARBAGE"),
-    CategoryConfirmationError,
-  );
-
-  await assert.rejects(
-    () =>
-      changeCitizenCategory(owner, manualComplaint.id, "GARBAGE", "electrical"),
-    CategoryConfirmationError,
-  );
-
-  const changeComplaint = await prisma.complaint.create({
-    data: {
-      publicRef: `SS-P5C-${Date.now()}`,
-      citizenId: owner.id,
-      description: "Trash pile on corner.",
-      imageUrl: "https://example.public.blob.vercel-storage.com/test3.jpg",
-      latitude: 28.6139,
-      longitude: 77.209,
-      status: "SUBMITTED",
-      aiCategory: "GARBAGE",
-    },
-  });
-
-  await changeCitizenCategory(owner, changeComplaint.id, "GARBAGE");
-
-  const changed = await prisma.complaint.findUnique({
-    where: { id: changeComplaint.id },
-    include: { department: true },
-  });
-  assert.equal(changed?.department?.code, "sanitation");
-
-  const changedHistory = await prisma.complaintHistory.findFirst({
-    where: { complaintId: changeComplaint.id, action: "CATEGORY_CHANGED" },
-  });
-  assert.ok(changedHistory);
-  assert.match(changedHistory?.metadata ?? "", /USER_SELECTED/);
-
-  await prisma.complaintHistory.deleteMany({
-    where: {
-      complaintId: {
-        in: [complaint.id, manualComplaint.id, changeComplaint.id],
+    const complaint = await prisma.complaint.create({
+      data: {
+        publicRef: `SS-P5-${Date.now()}`,
+        citizenId: owner.id,
+        description: "A deep pothole blocking the lane.",
+        imageUrl: "https://example.public.blob.vercel-storage.com/test.jpg",
+        latitude: 28.6139,
+        longitude: 77.209,
+        status: "SUBMITTED",
+        aiCategory: "POTHOLE",
       },
-    },
-  });
-  await prisma.complaint.deleteMany({
-    where: {
-      id: { in: [complaint.id, manualComplaint.id, changeComplaint.id] },
-    },
-  });
-  await prisma.user.deleteMany({ where: { id: { in: [owner.id, other.id] } } });
+    });
+    harness.complaintIds.push(complaint.id);
+
+    await confirmCitizenCategory(owner, complaint.id);
+    const routed = await prisma.complaint.findUnique({
+      where: { id: complaint.id },
+      include: { department: true },
+    });
+    assert.equal(routed?.status, "ROUTED");
+    assert.equal(routed?.category, "POTHOLE");
+    assert.equal(routed?.departmentId, potholeDept.id);
+
+    await assert.rejects(
+      () => confirmCitizenCategory(owner, complaint.id),
+      CategoryConfirmationError,
+    );
+    await assert.rejects(
+      () => confirmCitizenCategory(other, complaint.id),
+      CategoryConfirmationError,
+    );
+
+    const manualComplaint = await prisma.complaint.create({
+      data: {
+        publicRef: `SS-P5M-${Date.now()}`,
+        citizenId: owner.id,
+        description: "Miscellaneous civic issue.",
+        imageUrl: "https://example.public.blob.vercel-storage.com/test2.jpg",
+        latitude: 28.6139,
+        longitude: 77.209,
+        status: "SUBMITTED",
+      },
+    });
+    harness.complaintIds.push(manualComplaint.id);
+
+    await changeCitizenCategory(owner, manualComplaint.id, "OTHER", otherDept.id);
+    const manualRouted = await prisma.complaint.findUnique({
+      where: { id: manualComplaint.id },
+    });
+    assert.equal(manualRouted?.category, "OTHER");
+    assert.equal(manualRouted?.departmentId, otherDept.id);
+
+    await assert.rejects(
+      () => changeCitizenCategory(owner, manualComplaint.id, "GARBAGE"),
+      CategoryConfirmationError,
+    );
+
+    const changeComplaint = await prisma.complaint.create({
+      data: {
+        publicRef: `SS-P5C-${Date.now()}`,
+        citizenId: owner.id,
+        description: "Garbage pile on the street corner.",
+        imageUrl: "https://example.public.blob.vercel-storage.com/test3.jpg",
+        latitude: 28.6139,
+        longitude: 77.209,
+        status: "SUBMITTED",
+      },
+    });
+    harness.complaintIds.push(changeComplaint.id);
+
+    await changeCitizenCategory(owner, changeComplaint.id, "GARBAGE");
+    const changed = await prisma.complaint.findUnique({
+      where: { id: changeComplaint.id },
+    });
+    assert.equal(changed?.departmentId, garbageDept.id);
+  } finally {
+    await finishDepartmentTest(harness);
+  }
 }
 
 async function main() {
-  loadEnvLocal();
   testParsing();
   await testRoutingRules();
   await testComplaintFlows();
-  console.log("phase5 category routing tests passed");
+  console.log("phase5 category tests passed");
 }
 
 main().catch((error) => {

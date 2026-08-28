@@ -57,13 +57,13 @@ async function routeComplaint(input: {
   actor: AuthUser;
   complaintId: string;
   category: ComplaintCategory;
-  manualDepartmentSlug?: string | null;
+  departmentId?: string | null;
   historyAction: "CATEGORY_CONFIRMED" | "CATEGORY_CHANGED";
   routingMethod: CategoryRoutingMetadata["routingMethod"];
 }) {
   const department = await resolveDepartmentIdForRouting({
     category: input.category,
-    manualDepartmentSlug: input.manualDepartmentSlug,
+    departmentId: input.departmentId,
   });
 
   await prisma.$transaction(async (tx) => {
@@ -103,6 +103,7 @@ async function routeComplaint(input: {
         metadata: historyNote({
           category: input.category,
           routingMethod: input.routingMethod,
+          departmentId: department.id,
           departmentCode: department.code,
         }),
       },
@@ -146,7 +147,7 @@ export async function changeCitizenCategory(
   actor: AuthUser,
   complaintId: string,
   categoryInput: unknown,
-  departmentSlugInput?: unknown,
+  departmentIdInput?: unknown,
 ) {
   assertCitizenActor(actor);
 
@@ -159,8 +160,12 @@ export async function changeCitizenCategory(
     actor,
     complaintId,
     category,
-    manualDepartmentSlug:
-      category === "OTHER" ? (departmentSlugInput as string | undefined) : null,
+    departmentId:
+      category === "OTHER"
+        ? typeof departmentIdInput === "string"
+          ? departmentIdInput
+          : null
+        : null,
     historyAction: "CATEGORY_CHANGED",
     routingMethod: "USER_SELECTED",
   });

@@ -33,6 +33,7 @@ export type RoutingMethod = (typeof ROUTING_METHODS)[number];
 export type CategoryRoutingMetadata = {
   category: string;
   routingMethod: RoutingMethod;
+  departmentId?: string;
   departmentCode?: string;
 };
 

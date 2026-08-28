@@ -5,6 +5,7 @@ import { requireSuperAdmin } from "@/lib/auth/require";
 import {
   createAdminDepartment,
   updateAdminDepartment,
+  updateCategoryRouting,
 } from "@/domains/admin/departments";
 import {
   overrideAdminComplaint,
@@ -52,6 +53,7 @@ export async function createDepartmentAction(
       createAdminDepartment(actor, {
         name: formData.get("name"),
         code: formData.get("code"),
+        description: formData.get("description"),
       }),
     ["/admin/departments"],
   );
@@ -66,8 +68,25 @@ export async function updateDepartmentAction(
       updateAdminDepartment(actor, departmentId, {
         name: formData.get("name"),
         code: formData.get("code"),
+        description: formData.get("description"),
         isActive: formData.get("isActive"),
       }),
+    ["/admin/departments"],
+  );
+}
+
+export async function updateCategoryRoutingAction(
+  formData: FormData,
+): Promise<AdminActionResult> {
+  const assignments = [...formData.entries()]
+    .filter(([key]) => key.startsWith("route_"))
+    .map(([key, value]) => ({
+      category: key.slice("route_".length),
+      departmentId: typeof value === "string" ? value : "",
+    }));
+
+  return runAdminAction(
+    (actor) => updateCategoryRouting(actor, assignments),
     ["/admin/departments"],
   );
 }

@@ -86,6 +86,7 @@ export type ClassificationAnalysisResult = {
   priorityReason: string;
   classificationReason: string;
   serviceType: string;
+  recommendedDepartmentId: string | null;
   recommendedDepartment: string;
   recommendedAction: string;
   requiresManualReview: boolean;

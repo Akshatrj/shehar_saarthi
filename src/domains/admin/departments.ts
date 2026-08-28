@@ -1,13 +1,29 @@
 import { prisma } from "@/lib/db";
 import type { AuthUser } from "@/lib/rbac";
 import { AdminError, assertSuperAdmin } from "@/domains/admin/auth";
+import {
+  saveCategoryRoutes,
+  getCategoryRouteMap,
+} from "@/domains/departments/routes";
+import {
+  COMPLAINT_CATEGORIES,
+  COMPLAINT_CATEGORY_LABELS,
+  type ComplaintCategory,
+} from "@/domains/complaints/types";
 
 export type AdminDepartmentRow = {
   id: string;
   name: string;
   code: string;
+  description: string | null;
   isActive: boolean;
   createdAt: string;
+};
+
+export type CategoryRoutingRow = {
+  category: ComplaintCategory;
+  label: string;
+  departmentId: string;
 };
 
 function parseDepartmentName(value: unknown) {
@@ -28,6 +44,17 @@ export function parseDepartmentCode(value: unknown) {
   return code;
 }
 
+function parseDepartmentDescription(value: unknown) {
+  if (value == null || value === "") {
+    return null;
+  }
+  const description = typeof value === "string" ? value.trim() : "";
+  if (description.length > 500) {
+    throw new AdminError("Department description must be 500 characters or fewer.");
+  }
+  return description || null;
+}
+
 export async function listAdminDepartments(actor: AuthUser) {
   assertSuperAdmin(actor);
 
@@ -37,6 +64,7 @@ export async function listAdminDepartments(actor: AuthUser) {
       id: true,
       name: true,
       code: true,
+      description: true,
       isActive: true,
       createdAt: true,
     },
@@ -46,19 +74,57 @@ export async function listAdminDepartments(actor: AuthUser) {
     id: row.id,
     name: row.name,
     code: row.code,
+    description: row.description,
     isActive: row.isActive,
     createdAt: row.createdAt.toISOString(),
   }));
 }
 
+export async function listCategoryRouting(actor: AuthUser): Promise<CategoryRoutingRow[]> {
+  assertSuperAdmin(actor);
+  const routes = await getCategoryRouteMap();
+
+  return COMPLAINT_CATEGORIES.map((category) => ({
+    category,
+    label: COMPLAINT_CATEGORY_LABELS[category],
+    departmentId: routes.get(category)?.id ?? "",
+  }));
+}
+
+export async function updateCategoryRouting(
+  actor: AuthUser,
+  assignments: Array<{ category: unknown; departmentId: unknown }>,
+) {
+  assertSuperAdmin(actor);
+
+  await saveCategoryRoutes(
+    assignments.map((assignment) => {
+      const category =
+        typeof assignment.category === "string"
+          ? (assignment.category as ComplaintCategory)
+          : null;
+      if (!category || !COMPLAINT_CATEGORIES.includes(category)) {
+        throw new AdminError("Please choose a valid category.");
+      }
+      const departmentId =
+        typeof assignment.departmentId === "string" &&
+        assignment.departmentId.trim()
+          ? assignment.departmentId.trim()
+          : null;
+      return { category, departmentId };
+    }),
+  );
+}
+
 export async function createAdminDepartment(
   actor: AuthUser,
-  input: { name: unknown; code: unknown },
+  input: { name: unknown; code: unknown; description?: unknown },
 ) {
   assertSuperAdmin(actor);
 
   const name = parseDepartmentName(input.name);
   const code = parseDepartmentCode(input.code);
+  const description = parseDepartmentDescription(input.description);
 
   const existing = await prisma.department.findFirst({
     where: { OR: [{ name }, { code }] },
@@ -68,21 +134,27 @@ export async function createAdminDepartment(
     throw new AdminError("A department with that name or code already exists.");
   }
 
-  return prisma.department.create({
-    data: { name, code, isActive: true },
+  await prisma.department.create({
+    data: { name, code, description, isActive: true },
     select: { id: true },
-  }).then(() => undefined);
+  });
 }
 
 export async function updateAdminDepartment(
   actor: AuthUser,
   departmentId: string,
-  input: { name: unknown; code: unknown; isActive: unknown },
+  input: {
+    name: unknown;
+    code: unknown;
+    description?: unknown;
+    isActive: unknown;
+  },
 ) {
   assertSuperAdmin(actor);
 
   const name = parseDepartmentName(input.name);
   const code = parseDepartmentCode(input.code);
+  const description = parseDepartmentDescription(input.description);
   const isActive =
     input.isActive === true ||
     input.isActive === "true" ||
@@ -109,7 +181,7 @@ export async function updateAdminDepartment(
 
   await prisma.department.update({
     where: { id: departmentId },
-    data: { name, code, isActive },
+    data: { name, code, description, isActive },
   });
 }
 

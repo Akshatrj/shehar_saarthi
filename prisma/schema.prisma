@@ -129,8 +129,20 @@ model Department {
   users                 User[]
   complaints            Complaint[]
   recommendedComplaints Complaint[]         @relation("RecommendedDepartment")
+  categoryRoutes        CategoryRoute[]
 
   @@map("departments")
+}
+
+model CategoryRoute {
+  category     ComplaintCategory @id
+  departmentId String            @db.Uuid
+  updatedAt    DateTime          @updatedAt
+
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+
+  @@index([departmentId])
+  @@map("category_routes")
 }
 
 model Complaint {

@@ -201,7 +201,7 @@ export default function DesignSystemPage() {
             title="Citizen"
             items={[
               { href: "/design-system", label: "Design system" },
-              { href: "/dashboard", label: "Dashboard" },
+              { href: "/citizen", label: "My complaints" },
               { href: PUBLIC_REPORT_HREF, label: "Report issue" },
             ]}
           />

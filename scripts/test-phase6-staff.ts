@@ -1,7 +1,5 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { prisma } from "@/lib/db";
 import {
   completeWorkerComplaint,
@@ -16,29 +14,12 @@ import {
 } from "@/domains/complaints/department-admin-service";
 import type { AuthUser } from "@/lib/rbac";
 
-function loadEnvLocal() {
-  const envPath = resolve(process.cwd(), ".env.local");
-  try {
-    const envFile = readFileSync(envPath, "utf8");
-    for (const line of envFile.split(/\r?\n/)) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith("#")) continue;
-      const eq = trimmed.indexOf("=");
-      if (eq === -1) continue;
-      const key = trimmed.slice(0, eq).trim();
-      let value = trimmed.slice(eq + 1).trim();
-      if (
-        (value.startsWith('"') && value.endsWith('"')) ||
-        (value.startsWith("'") && value.endsWith("'"))
-      ) {
-        value = value.slice(1, -1);
-      }
-      if (!process.env[key]) process.env[key] = value;
-    }
-  } catch {
-    // optional
-  }
-}
+import {
+  beginDepartmentTest,
+  createTestDepartment,
+  finishDepartmentTest,
+  loadEnvLocal,
+} from "./test-fixtures";
 
 async function main() {
   loadEnvLocal();
@@ -48,15 +29,12 @@ async function main() {
     return;
   }
 
-  const roads = await prisma.department.findFirst({
-    where: { code: "roads" },
-    select: { id: true },
+  const harness = await beginDepartmentTest(prisma);
+  try {
+  const roads = await createTestDepartment(harness, { categories: ["POTHOLE"] });
+  const electrical = await createTestDepartment(harness, {
+    categories: ["BROKEN_STREETLIGHT"],
   });
-  const electrical = await prisma.department.findFirst({
-    where: { code: "electrical" },
-    select: { id: true },
-  });
-  assert.ok(roads && electrical, "seed departments required");
 
   const roadsWorker: AuthUser = {
     id: randomUUID(),
@@ -152,6 +130,14 @@ async function main() {
     },
     select: { id: true },
   });
+  harness.complaintIds.push(roadsComplaint.id);
+  harness.userIds.push(
+    roadsWorker.id,
+    electricalWorker.id,
+    otherRoadsWorker.id,
+    roadsAdmin.id,
+    citizen.id,
+  );
 
   const roadsContext = requireWorkerContext(roadsWorker);
   const electricalContext = requireWorkerContext(electricalWorker);
@@ -197,21 +183,9 @@ async function main() {
 
   await startComplaintProgress(roadsContext, roadsComplaint.id);
   await completeWorkerComplaint(roadsContext, roadsComplaint.id);
-
-  await prisma.complaint.delete({ where: { id: roadsComplaint.id } });
-  await prisma.user.deleteMany({
-    where: {
-      id: {
-        in: [
-          roadsWorker.id,
-          electricalWorker.id,
-          otherRoadsWorker.id,
-          roadsAdmin.id,
-          citizen.id,
-        ],
-      },
-    },
-  });
+  } finally {
+    await finishDepartmentTest(harness);
+  }
 
   console.log("phase6 worker tests passed");
 }
